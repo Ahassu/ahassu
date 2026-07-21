@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/providers.dart';
+import '../screens/graphs_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/note_editor_screen.dart';
 import '../screens/notes_screen.dart';
@@ -24,6 +25,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     TopicsScreen(),
     NotesScreen(),
     StatsScreen(),
+    GraphsScreen(),
   ];
 
   Future<void> _logStudySession() async {
@@ -144,9 +146,10 @@ class _AppShellState extends ConsumerState<AppShell> {
           children: [
             _navItem(Icons.home_rounded, 'Home', 0),
             _navItem(Icons.menu_book_rounded, 'Topics', 1),
-            const SizedBox(width: 40),
+            const SizedBox(width: 36),
             _navItem(Icons.description_rounded, 'Notes', 2),
             _navItem(Icons.bar_chart_rounded, 'Stats', 3),
+            _navItem(Icons.show_chart_rounded, 'Graphs', 4),
           ],
         ),
       ),
@@ -159,7 +162,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     return InkWell(
       onTap: () => setState(() => _index = index),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

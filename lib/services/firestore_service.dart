@@ -5,6 +5,7 @@ import '../data/curriculum_seed.dart';
 import '../models/goal.dart';
 import '../models/learning_path.dart';
 import '../models/note.dart';
+import '../models/quiz_question.dart';
 import '../models/study_session.dart';
 import '../models/topic.dart';
 
@@ -21,6 +22,8 @@ class FirestoreService {
       _db.collection('notes');
   CollectionReference<Map<String, dynamic>> get _sessions =>
       _db.collection('studySessions');
+  CollectionReference<Map<String, dynamic>> get _quizQuestions =>
+      _db.collection('quizQuestions');
   DocumentReference<Map<String, dynamic>> get _goalDoc =>
       _db.collection('goal').doc('main');
 
@@ -62,11 +65,35 @@ class FirestoreService {
     await _paths.doc(path.id).set(path.toMap());
   }
 
+  Future<void> updateLearningPath(String pathId, {required String title, String? examCode}) async {
+    await _paths.doc(pathId).update({'title': title, 'examCode': examCode});
+  }
+
+  Future<void> deleteLearningPath(String pathId) async {
+    await _paths.doc(pathId).delete();
+  }
+
   Future<void> addTopic(String pathId, String title) async {
     final doc = await _paths.doc(pathId).get();
     if (!doc.exists) return;
     final path = LearningPath.fromFirestore(doc.id, doc.data()!);
     final updated = [...path.topics, Topic(id: 'topic_${_uuid.v4()}', title: title)];
+    await _paths.doc(pathId).update({'topics': updated.map((t) => t.toMap()).toList()});
+  }
+
+  Future<void> updateTopicTitle(String pathId, String topicId, String title) async {
+    final doc = await _paths.doc(pathId).get();
+    if (!doc.exists) return;
+    final path = LearningPath.fromFirestore(doc.id, doc.data()!);
+    final updated = path.topics.map((t) => t.id == topicId ? Topic(id: t.id, title: title, done: t.done, completedAt: t.completedAt) : t).toList();
+    await _paths.doc(pathId).update({'topics': updated.map((t) => t.toMap()).toList()});
+  }
+
+  Future<void> deleteTopic(String pathId, String topicId) async {
+    final doc = await _paths.doc(pathId).get();
+    if (!doc.exists) return;
+    final path = LearningPath.fromFirestore(doc.id, doc.data()!);
+    final updated = path.topics.where((t) => t.id != topicId).toList();
     await _paths.doc(pathId).update({'topics': updated.map((t) => t.toMap()).toList()});
   }
 
@@ -128,6 +155,35 @@ class FirestoreService {
       learningPathTitle: learningPathTitle,
     );
     await _sessions.doc(id).set(session.toMap());
+  }
+
+  // ---- Quiz ----
+
+  Stream<List<QuizQuestion>> watchQuizQuestions() {
+    return _quizQuestions.orderBy('createdAt').snapshots().map((snap) =>
+        snap.docs.map((d) => QuizQuestion.fromFirestore(d.id, d.data())).toList());
+  }
+
+  Future<void> addQuizQuestion({
+    required String learningPathId,
+    required String question,
+    required List<String> options,
+    required int correctIndex,
+  }) async {
+    final id = 'quiz_${_uuid.v4()}';
+    final q = QuizQuestion(
+      id: id,
+      learningPathId: learningPathId,
+      question: question,
+      options: options,
+      correctIndex: correctIndex,
+      createdAt: DateTime.now(),
+    );
+    await _quizQuestions.doc(id).set(q.toMap());
+  }
+
+  Future<void> deleteQuizQuestion(String id) async {
+    await _quizQuestions.doc(id).delete();
   }
 
   // ---- Goal ----

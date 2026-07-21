@@ -64,7 +64,7 @@ class HomeScreen extends ConsumerWidget {
           Row(
             children: [
               const Expanded(
-                child: Text('Hi Raja 👋', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                child: Text('Hi Yami', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

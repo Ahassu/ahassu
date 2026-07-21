@@ -13,6 +13,9 @@ service cloud.firestore {
     match /studySessions/{docId} {
       allow read, write: if true;
     }
+    match /quizQuestions/{docId} {
+      allow read, write: if true;
+    }
     match /goal/{docId} {
       allow read, write: if true;
     }

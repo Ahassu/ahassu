@@ -5,30 +5,15 @@ import 'package:intl/intl.dart';
 import '../models/learning_path.dart';
 import '../providers/providers.dart';
 import '../theme.dart';
+import '../utils/path_dialogs.dart';
+import 'note_editor_screen.dart';
 import 'notes_screen.dart';
+import 'quiz_screen.dart';
 
 class PathDetailScreen extends ConsumerWidget {
   final String pathId;
 
   const PathDetailScreen({super.key, required this.pathId});
-
-  Future<void> _addSubtopic(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Subtopic'),
-        content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(labelText: 'Title')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Add')),
-        ],
-      ),
-    );
-    if (result == true && controller.text.trim().isNotEmpty) {
-      await ref.read(firestoreServiceProvider).addTopic(pathId, controller.text.trim());
-    }
-  }
 
   Future<void> _editCertStatus(BuildContext context, WidgetRef ref, LearningPath path) async {
     var status = path.certStatus;
@@ -111,6 +96,21 @@ class PathDetailScreen extends ConsumerWidget {
                   backgroundColor: kBackground,
                   pinned: true,
                   title: Text(path.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Rename',
+                      onPressed: () => showRenamePathDialog(context, ref, path),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      tooltip: 'Delete',
+                      onPressed: () async {
+                        final deleted = await confirmDeleteLearningPath(context, ref, path);
+                        if (deleted && context.mounted) Navigator.pop(context);
+                      },
+                    ),
+                  ],
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.all(16),
@@ -131,12 +131,12 @@ class PathDetailScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Topics (${path.doneCount}/${path.totalCount})',
+                          Text('Tasks (${path.doneCount}/${path.totalCount})',
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           TextButton.icon(
-                            onPressed: () => _addSubtopic(context, ref),
+                            onPressed: () => showAddTaskDialog(context, ref, pathId),
                             icon: const Icon(Icons.add, size: 18),
-                            label: const Text('Add'),
+                            label: const Text('Add Task'),
                           ),
                         ],
                       ),
@@ -146,12 +146,27 @@ class PathDetailScreen extends ConsumerWidget {
                             for (final topic in path.topics)
                               CheckboxListTile(
                                 value: topic.done,
+                                controlAffinity: ListTileControlAffinity.leading,
                                 title: Text(
                                   topic.title,
                                   style: TextStyle(
                                     decoration: topic.done ? TextDecoration.lineThrough : null,
                                     color: topic.done ? Colors.black45 : Colors.black87,
                                   ),
+                                ),
+                                secondary: PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.black45),
+                                  onSelected: (action) {
+                                    if (action == 'edit') {
+                                      showRenameTaskDialog(context, ref, pathId, topic);
+                                    } else if (action == 'delete') {
+                                      confirmDeleteTask(context, ref, pathId, topic);
+                                    }
+                                  },
+                                  itemBuilder: (ctx) => const [
+                                    PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                    PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                  ],
                                 ),
                                 onChanged: (v) => ref
                                     .read(firestoreServiceProvider)
@@ -161,19 +176,46 @@ class PathDetailScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.quiz_outlined, color: kPrimaryPurple),
+                          title: const Text('Quiz'),
+                          subtitle: const Text('Self-test on this learning path'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => QuizScreen(pathId: path.id, pathTitle: path.title)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Notes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          TextButton.icon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotesScreen(filterPathId: path.id, filterPathTitle: path.title),
+                          Row(
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => NoteEditorScreen(prefillPathId: path.id, prefillPathTitle: path.title),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('Add'),
                               ),
-                            ),
-                            icon: const Icon(Icons.open_in_new, size: 16),
-                            label: const Text('View all'),
+                              TextButton.icon(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => NotesScreen(filterPathId: path.id, filterPathTitle: path.title),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.open_in_new, size: 16),
+                                label: const Text('View all'),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -189,6 +231,10 @@ class PathDetailScreen extends ConsumerWidget {
                             child: ListTile(
                               title: Text(note.title),
                               subtitle: Text(note.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => NoteEditorScreen(existing: note)),
+                              ),
                             ),
                           ),
                     ]),

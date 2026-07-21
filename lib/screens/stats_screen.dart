@@ -1,7 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../providers/providers.dart';
 import '../theme.dart';
@@ -13,21 +11,10 @@ class StatsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pathsAsync = ref.watch(learningPathsProvider);
-    final sessionsAsync = ref.watch(studySessionsProvider);
     final certStats = ref.watch(certificationStatsProvider);
     final totalMinutes = ref.watch(totalMinutesProvider);
     final overall = ref.watch(overallProgressProvider);
-
-    final today = DateTime.now();
-    final last7 = List.generate(7, (i) => DateTime(today.year, today.month, today.day).subtract(Duration(days: 6 - i)));
-    final sessions = sessionsAsync.value ?? [];
-    final minutesByDay = {
-      for (final d in last7)
-        d: sessions
-            .where((s) => s.date.year == d.year && s.date.month == d.month && s.date.day == d.day)
-            .fold<int>(0, (sum, s) => sum + s.minutes)
-    };
-    final maxMinutes = (minutesByDay.values.isEmpty ? 0 : minutesByDay.values.reduce((a, b) => a > b ? a : b)).toDouble();
+    final todayTopics = ref.watch(todayCompletedTopicsProvider);
 
     return SafeArea(
       child: ListView(
@@ -48,51 +35,12 @@ class StatsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          const Text('This Week', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Card(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 20, 12, 8),
-              child: SizedBox(
-                height: 160,
-                child: BarChart(
-                  BarChartData(
-                    maxY: maxMinutes <= 0 ? 30 : maxMinutes * 1.2,
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            final idx = value.toInt();
-                            if (idx < 0 || idx >= last7.length) return const SizedBox.shrink();
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Text(DateFormat.E().format(last7[idx]), style: const TextStyle(fontSize: 11, color: Colors.black54)),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    barGroups: [
-                      for (var i = 0; i < last7.length; i++)
-                        BarChartGroupData(x: i, barRods: [
-                          BarChartRodData(
-                            toY: (minutesByDay[last7[i]] ?? 0).toDouble(),
-                            color: kPrimaryPurple,
-                            width: 18,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ]),
-                    ],
-                  ),
-                ),
-              ),
+            child: ListTile(
+              leading: const Icon(Icons.today, color: kPrimaryPurple),
+              title: Text('$todayTopics topics completed today'),
+              subtitle: const Text('See the Graphs tab for charts and trends'),
             ),
           ),
           const SizedBox(height: 20),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/goal.dart';
 import '../models/learning_path.dart';
 import '../models/note.dart';
+import '../models/quiz_question.dart';
 import '../models/study_session.dart';
 import '../services/firestore_service.dart';
 
@@ -25,6 +26,10 @@ final studySessionsProvider = StreamProvider<List<StudySession>>((ref) {
 
 final goalProvider = StreamProvider<Goal>((ref) {
   return ref.watch(firestoreServiceProvider).watchGoal();
+});
+
+final quizQuestionsProvider = StreamProvider<List<QuizQuestion>>((ref) {
+  return ref.watch(firestoreServiceProvider).watchQuizQuestions();
 });
 
 class ProgressStats {
