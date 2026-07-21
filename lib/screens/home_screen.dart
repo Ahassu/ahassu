@@ -53,7 +53,7 @@ class HomeScreen extends ConsumerWidget {
     final goalAsync = ref.watch(goalProvider);
     final pathsAsync = ref.watch(learningPathsProvider);
     final progress = ref.watch(overallProgressProvider);
-    final streak = ref.watch(studyStreakProvider);
+    final certStats = ref.watch(certificationStatsProvider);
     final todayTopics = ref.watch(todayCompletedTopicsProvider);
     final totalMinutes = ref.watch(totalMinutesProvider);
 
@@ -131,10 +131,10 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   StatChip(
-                    icon: Icons.local_fire_department,
+                    icon: Icons.workspace_premium,
                     iconColor: Colors.redAccent,
-                    label: 'Study Streak',
-                    value: '$streak days',
+                    label: 'Certifications',
+                    value: '${certStats.passed}/${certStats.total}',
                   ),
                   StatChip(
                     icon: Icons.menu_book,

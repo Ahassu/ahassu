@@ -46,29 +46,18 @@ final overallProgressProvider = Provider<ProgressStats>((ref) {
 bool _isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-final studyStreakProvider = Provider<int>((ref) {
-  final sessions = ref.watch(studySessionsProvider).value ?? [];
-  if (sessions.isEmpty) return 0;
+class CertificationStats {
+  final int passed;
+  final int total;
 
-  final days = sessions.map((s) => DateTime(s.date.year, s.date.month, s.date.day)).toSet();
-  final today = DateTime.now();
-  final todayOnly = DateTime(today.year, today.month, today.day);
+  const CertificationStats({required this.passed, required this.total});
+}
 
-  var cursor = todayOnly;
-  if (!days.contains(cursor)) {
-    // Allow the streak to still show if today hasn't been logged yet,
-    // as long as yesterday was studied.
-    final yesterday = cursor.subtract(const Duration(days: 1));
-    if (!days.contains(yesterday)) return 0;
-    cursor = yesterday;
-  }
-
-  var streak = 0;
-  while (days.contains(cursor)) {
-    streak += 1;
-    cursor = cursor.subtract(const Duration(days: 1));
-  }
-  return streak;
+final certificationStatsProvider = Provider<CertificationStats>((ref) {
+  final paths = ref.watch(learningPathsProvider).value ?? [];
+  final certifiable = paths.where((p) => p.examCode != null);
+  final passed = certifiable.where((p) => p.certStatus == CertStatus.passed).length;
+  return CertificationStats(passed: passed, total: certifiable.length);
 });
 
 final todayMinutesProvider = Provider<int>((ref) {

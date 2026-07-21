@@ -14,7 +14,7 @@ class StatsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pathsAsync = ref.watch(learningPathsProvider);
     final sessionsAsync = ref.watch(studySessionsProvider);
-    final streak = ref.watch(studyStreakProvider);
+    final certStats = ref.watch(certificationStatsProvider);
     final totalMinutes = ref.watch(totalMinutesProvider);
     final overall = ref.watch(overallProgressProvider);
 
@@ -41,7 +41,7 @@ class StatsScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  StatChip(icon: Icons.local_fire_department, iconColor: Colors.redAccent, label: 'Streak', value: '$streak days'),
+                  StatChip(icon: Icons.workspace_premium, iconColor: Colors.redAccent, label: 'Certifications', value: '${certStats.passed}/${certStats.total}'),
                   StatChip(icon: Icons.access_time_filled, iconColor: kBlue, label: 'Total Time', value: '${(totalMinutes / 60).toStringAsFixed(1)}h'),
                   StatChip(icon: Icons.emoji_events, iconColor: Colors.amber.shade700, label: 'Overall', value: '${overall.percent}%'),
                 ],
