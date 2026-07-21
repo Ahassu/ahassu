@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "83939725208",
+    "project_id": "ahassu",
+    "storage_bucket": "ahassu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:83939725208:android:4bd742666e01a39944a5ed",
+        "android_client_info": {
+          "package_name": "com.ahassu.ahassu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA60GvMUGMWSB_cfACXhEZtH3Lrgs4WAIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
