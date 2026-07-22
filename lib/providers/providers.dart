@@ -5,6 +5,7 @@ import '../models/goal.dart';
 import '../models/learning_path.dart';
 import '../models/note.dart';
 import '../models/quiz_question.dart';
+import '../models/roadmap.dart';
 import '../models/study_session.dart';
 import '../services/firestore_service.dart';
 
@@ -30,6 +31,10 @@ final goalProvider = StreamProvider<Goal>((ref) {
 
 final quizQuestionsProvider = StreamProvider<List<QuizQuestion>>((ref) {
   return ref.watch(firestoreServiceProvider).watchQuizQuestions();
+});
+
+final roadmapsProvider = StreamProvider<List<RoadmapPlan>>((ref) {
+  return ref.watch(firestoreServiceProvider).watchRoadmaps();
 });
 
 class ProgressStats {

@@ -19,5 +19,8 @@ service cloud.firestore {
     match /goal/{docId} {
       allow read, write: if true;
     }
+    match /roadmaps/{docId} {
+      allow read, write: if true;
+    }
   }
 }

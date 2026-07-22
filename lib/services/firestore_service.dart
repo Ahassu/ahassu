@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/curriculum_seed.dart';
+import '../data/roadmap_seed.dart';
 import '../models/goal.dart';
 import '../models/learning_path.dart';
 import '../models/note.dart';
 import '../models/quiz_question.dart';
+import '../models/roadmap.dart';
 import '../models/study_session.dart';
 import '../models/topic.dart';
 
@@ -24,6 +26,8 @@ class FirestoreService {
       _db.collection('studySessions');
   CollectionReference<Map<String, dynamic>> get _quizQuestions =>
       _db.collection('quizQuestions');
+  CollectionReference<Map<String, dynamic>> get _roadmaps =>
+      _db.collection('roadmaps');
   DocumentReference<Map<String, dynamic>> get _goalDoc =>
       _db.collection('goal').doc('main');
 
@@ -40,6 +44,20 @@ class FirestoreService {
       title: 'Become Azure MLOps Expert',
       targetDate: DateTime.now().add(const Duration(days: 365)),
     ).toMap());
+    await batch.commit();
+  }
+
+  /// Seeds the certification roadmaps the first time the app is run.
+  /// Kept separate from [seedIfEmpty] so it can backfill for accounts that
+  /// already seeded learningPaths before roadmaps existed.
+  Future<void> seedRoadmapsIfEmpty() async {
+    final existing = await _roadmaps.limit(1).get();
+    if (existing.docs.isNotEmpty) return;
+
+    final batch = _db.batch();
+    for (final plan in buildSeedRoadmaps()) {
+      batch.set(_roadmaps.doc(plan.id), plan.toMap());
+    }
     await batch.commit();
   }
 
@@ -184,6 +202,25 @@ class FirestoreService {
 
   Future<void> deleteQuizQuestion(String id) async {
     await _quizQuestions.doc(id).delete();
+  }
+
+  // ---- Roadmaps ----
+
+  Stream<List<RoadmapPlan>> watchRoadmaps() {
+    return _roadmaps.orderBy('order').snapshots().map((snap) => snap.docs
+        .map((d) => RoadmapPlan.fromFirestore(d.id, d.data()))
+        .toList());
+  }
+
+  Future<void> toggleRoadmapStop(String roadmapId, String stopId, bool done) async {
+    final doc = await _roadmaps.doc(roadmapId).get();
+    if (!doc.exists) return;
+    final plan = RoadmapPlan.fromFirestore(doc.id, doc.data()!);
+    final updated = plan.stops.map((s) {
+      if (s.id != stopId) return s;
+      return s.copyWith(done: done, completedAt: done ? DateTime.now() : null);
+    }).toList();
+    await _roadmaps.doc(roadmapId).update({'stops': updated.map((s) => s.toMap()).toList()});
   }
 
   // ---- Goal ----
