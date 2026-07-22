@@ -62,14 +62,12 @@ class FirestoreService {
     await batch.commit();
   }
 
-  /// Seeds one reference note per learning path linking its full study
-  /// guide. Uses fixed ids and checks a single marker doc rather than
-  /// "collection empty", since the notes collection may already contain
-  /// notes a user wrote themselves.
+  /// Upserts one reference note per learning path with its full study
+  /// guide content. Uses fixed ids, so this always overwrites just those
+  /// specific notes (picking up content updates) without touching the
+  /// notes collection otherwise — anything a user wrote themselves is
+  /// untouched, since their notes have different (uuid) ids.
   Future<void> seedGuideNotesIfMissing() async {
-    final marker = await _notes.doc('note_guide_path_01').get();
-    if (marker.exists) return;
-
     final batch = _db.batch();
     for (final note in buildSeedGuideNotes()) {
       batch.set(_notes.doc(note.id), note.toMap());
