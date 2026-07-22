@@ -27,6 +27,7 @@ class _AhassuAppState extends ConsumerState<AhassuApp> {
     ref.read(firestoreServiceProvider).seedIfEmpty();
     ref.read(firestoreServiceProvider).seedRoadmapsIfEmpty();
     ref.read(firestoreServiceProvider).seedGuideNotesIfMissing();
+    ref.read(firestoreServiceProvider).seedInterviewPrepNoteIfMissing();
   }
 
   @override

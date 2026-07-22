@@ -75,6 +75,14 @@ class FirestoreService {
     await batch.commit();
   }
 
+  /// Upserts the standalone Interview Prep note by its fixed id — same
+  /// always-upsert pattern as [seedGuideNotesIfMissing], so content edits
+  /// here always land without ever duplicating the note.
+  Future<void> seedInterviewPrepNoteIfMissing() async {
+    final note = buildInterviewPrepPlatformNote();
+    await _notes.doc(note.id).set(note.toMap());
+  }
+
   // ---- Learning paths ----
 
   Stream<List<LearningPath>> watchLearningPaths() {
