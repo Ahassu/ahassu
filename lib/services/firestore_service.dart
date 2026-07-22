@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/curriculum_seed.dart';
+import '../data/notes_seed.dart';
 import '../data/roadmap_seed.dart';
 import '../models/goal.dart';
 import '../models/learning_path.dart';
@@ -57,6 +58,21 @@ class FirestoreService {
     final batch = _db.batch();
     for (final plan in buildSeedRoadmaps()) {
       batch.set(_roadmaps.doc(plan.id), plan.toMap());
+    }
+    await batch.commit();
+  }
+
+  /// Seeds one reference note per learning path linking its full study
+  /// guide. Uses fixed ids and checks a single marker doc rather than
+  /// "collection empty", since the notes collection may already contain
+  /// notes a user wrote themselves.
+  Future<void> seedGuideNotesIfMissing() async {
+    final marker = await _notes.doc('note_guide_path_01').get();
+    if (marker.exists) return;
+
+    final batch = _db.batch();
+    for (final note in buildSeedGuideNotes()) {
+      batch.set(_notes.doc(note.id), note.toMap());
     }
     await batch.commit();
   }
