@@ -42,6 +42,21 @@ List<LearningPath> buildSeedLearningPaths() {
       ],
     ),
     (
+      'Databricks & SQL (Data Engineer Associate)',
+      'DEA',
+      [
+        'Lakehouse architecture: Delta Lake and Unity Catalog',
+        'Compute: all-purpose, job, and SQL warehouse clusters',
+        'Data ingestion: Auto Loader, COPY INTO, Lakeflow Connect',
+        'Medallion architecture: bronze, silver, gold layers',
+        'SQL and PySpark: joins, dedup, aggregations, window functions',
+        'Orchestration with Lakeflow Jobs',
+        'CI/CD with Databricks Asset Bundles and Git folders',
+        'Performance troubleshooting in the Spark UI',
+        'Governance: GRANT/REVOKE, row/column masking in Unity Catalog',
+      ],
+    ),
+    (
       'Core Machine Learning',
       null,
       [
