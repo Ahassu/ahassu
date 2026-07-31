@@ -24,9 +24,16 @@ class _AhassuAppState extends ConsumerState<AhassuApp> {
   @override
   void initState() {
     super.initState();
-    ref.read(firestoreServiceProvider).syncSeedData();
-    ref.read(firestoreServiceProvider).seedGuideNotesIfMissing();
-    ref.read(firestoreServiceProvider).seedInterviewPrepNoteIfMissing();
+    final service = ref.read(firestoreServiceProvider);
+    // Fire-and-forget, but never silently: a seed sync that fails (a denied
+    // Firestore rule, say) leaves the app showing a stale curriculum with
+    // nothing on screen to say why.
+    service.syncSeedData().catchError(
+        (Object e) => debugPrint('Ahassu: seed sync failed — $e'));
+    service.seedGuideNotesIfMissing().catchError(
+        (Object e) => debugPrint('Ahassu: guide note seed failed — $e'));
+    service.seedInterviewPrepNoteIfMissing().catchError(
+        (Object e) => debugPrint('Ahassu: interview note seed failed — $e'));
   }
 
   @override

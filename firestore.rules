@@ -22,5 +22,9 @@ service cloud.firestore {
     match /roadmaps/{docId} {
       allow read, write: if true;
     }
+    // Seed bookkeeping (meta/seed holds the applied seed version).
+    match /meta/{docId} {
+      allow read, write: if true;
+    }
   }
 }
