@@ -14,6 +14,35 @@ import '../models/topic.dart';
 
 const _uuid = Uuid();
 
+/// Bumped whenever the seed content changes in a way that has to reach a
+/// device that already seeded. Version 1 was the Azure MLOps curriculum;
+/// version 2 is the Azure Platform Engineer curriculum.
+const _seedVersion = 2;
+
+/// Numbered path ids from the v1 MLOps curriculum, mapped to the path they
+/// became in v2. Progress on a path not listed here belonged to a path that
+/// no longer exists in the curriculum.
+const _legacyPathMigration = <String, String>{
+  'path_04': 'path_databricks', // Databricks & SQL
+  'path_07': 'path_docker', // Docker & Containerization
+  'path_08': 'path_cka', // Kubernetes
+  'path_10': 'path_az400', // CI/CD & DevOps
+  'path_13': 'path_interview', // Interview Preparation
+};
+
+/// v1 seed paths were `path_01`…`path_13`. Paths added from inside the app
+/// use `path_<uuid>` and must never match this.
+final _legacySeedPathId = RegExp(r'^path_\d+$');
+
+const _defaultGoalTitle = 'Become an Azure Platform Engineer';
+
+/// Goal titles written by earlier versions, safe to replace. A title the
+/// user set themselves is left alone.
+const _replaceableGoalTitles = <String>{
+  'Become Azure MLOps Expert',
+  'Become MLOps Expert',
+};
+
 class FirestoreService {
   final FirebaseFirestore _db;
 
@@ -32,34 +61,152 @@ class FirestoreService {
   DocumentReference<Map<String, dynamic>> get _goalDoc =>
       _db.collection('goal').doc('main');
 
-  /// Seeds the curriculum + default goal the first time the app is run.
-  Future<void> seedIfEmpty() async {
-    final existing = await _paths.limit(1).get();
-    if (existing.docs.isNotEmpty) return;
+  DocumentReference<Map<String, dynamic>> get _seedMetaDoc =>
+      _db.collection('meta').doc('seed');
+
+  /// Brings an existing install up to the current [_seedVersion], and seeds
+  /// from scratch on a fresh one — the empty case is just the version-0 case.
+  ///
+  /// Progress is preserved wherever it still has somewhere to live: cert
+  /// status, exam dates, completed topics, and completed roadmap stops all
+  /// carry across, including over the v1 numbered path ids. Progress on a
+  /// path that no longer exists in the curriculum goes away with it.
+  Future<void> syncSeedData() async {
+    final meta = await _seedMetaDoc.get();
+    final version = meta.data()?['version'] as int? ?? 0;
+    if (version >= _seedVersion) return;
+
+    await _syncCurriculum();
+    await _syncRoadmaps();
+    await _retireStaleGuideNotes();
+    await _retargetDefaultGoal();
+
+    await _seedMetaDoc.set({
+      'version': _seedVersion,
+      'syncedAt': Timestamp.now(),
+    });
+  }
+
+  Future<void> _syncCurriculum() async {
+    final existing = await _paths.get();
+    final byId = {
+      for (final d in existing.docs) d.id: LearningPath.fromFirestore(d.id, d.data()),
+    };
 
     final batch = _db.batch();
     for (final path in buildSeedLearningPaths()) {
-      batch.set(_paths.doc(path.id), path.toMap());
+      final prior = byId[path.id] ?? _priorForPath(path.id, byId);
+      batch.set(_paths.doc(path.id), _withPreservedTopics(path, prior).toMap());
     }
-    batch.set(_goalDoc, Goal(
-      title: 'Become Azure MLOps Expert',
-      targetDate: DateTime.now().add(const Duration(days: 365)),
-    ).toMap());
+    // v1 seed docs are replaced by their semantic-id versions above; paths
+    // added from inside the app have uuid ids and are left untouched.
+    for (final doc in existing.docs) {
+      if (_legacySeedPathId.hasMatch(doc.id)) {
+        batch.delete(_paths.doc(doc.id));
+      }
+    }
     await batch.commit();
   }
 
-  /// Seeds the certification roadmaps the first time the app is run.
-  /// Kept separate from [seedIfEmpty] so it can backfill for accounts that
-  /// already seeded learningPaths before roadmaps existed.
-  Future<void> seedRoadmapsIfEmpty() async {
-    final existing = await _roadmaps.limit(1).get();
-    if (existing.docs.isNotEmpty) return;
+  LearningPath? _priorForPath(String newId, Map<String, LearningPath> byId) {
+    for (final entry in _legacyPathMigration.entries) {
+      if (entry.value == newId) return byId[entry.key];
+    }
+    return null;
+  }
+
+  /// Matches topics by title rather than id, so a topic that survived a
+  /// rewrite keeps its tick and a reworded one starts clean.
+  LearningPath _withPreservedTopics(LearningPath seed, LearningPath? prior) {
+    if (prior == null) return seed;
+    final completedAtByTitle = {
+      for (final t in prior.topics)
+        if (t.done) t.title: t.completedAt ?? DateTime.now(),
+    };
+    return seed.copyWith(
+      certStatus: prior.certStatus,
+      examDate: prior.examDate,
+      topics: seed.topics.map((t) {
+        final completedAt = completedAtByTitle[t.title];
+        if (completedAt == null) return t;
+        return t.copyWith(done: true, completedAt: completedAt);
+      }).toList(),
+    );
+  }
+
+  Future<void> _syncRoadmaps() async {
+    final existing = await _roadmaps.get();
+    final byId = {
+      for (final d in existing.docs) d.id: RoadmapPlan.fromFirestore(d.id, d.data()),
+    };
+    final seed = buildSeedRoadmaps();
+    final seedIds = seed.map((p) => p.id).toSet();
 
     final batch = _db.batch();
-    for (final plan in buildSeedRoadmaps()) {
-      batch.set(_roadmaps.doc(plan.id), plan.toMap());
+    for (final plan in seed) {
+      batch.set(_roadmaps.doc(plan.id), _withPreservedStops(plan, byId[plan.id]).toMap());
+    }
+    for (final doc in existing.docs) {
+      if (!seedIds.contains(doc.id)) {
+        batch.delete(_roadmaps.doc(doc.id));
+      }
     }
     await batch.commit();
+  }
+
+  /// A stop keeps its tick only if both its id and its title are unchanged —
+  /// stop ids are positional, so the title guards against a rewritten week
+  /// inheriting the previous one's progress.
+  RoadmapPlan _withPreservedStops(RoadmapPlan seed, RoadmapPlan? prior) {
+    if (prior == null) return seed;
+    final priorById = {for (final s in prior.stops) s.id: s};
+    return RoadmapPlan(
+      id: seed.id,
+      order: seed.order,
+      pathTitle: seed.pathTitle,
+      examCode: seed.examCode,
+      summary: seed.summary,
+      stops: seed.stops.map((s) {
+        final was = priorById[s.id];
+        if (was == null || !was.done || was.title != s.title) return s;
+        return s.copyWith(done: true, completedAt: was.completedAt ?? DateTime.now());
+      }).toList(),
+    );
+  }
+
+  /// Removes guide notes belonging to paths the curriculum no longer has.
+  /// Only fixed seed ids are deleted — hand-written notes use uuid ids.
+  Future<void> _retireStaleGuideNotes() async {
+    final live = buildSeedGuideNotes().map((n) => n.id).toSet();
+    final batch = _db.batch();
+    for (final id in retiredGuideNoteIds) {
+      if (!live.contains(id)) batch.delete(_notes.doc(id));
+    }
+    await batch.commit();
+  }
+
+  /// Repoints the goal at the new track, unless the user retitled it.
+  /// Creates it on a fresh install, where there is no goal doc yet.
+  Future<void> _retargetDefaultGoal() async {
+    final doc = await _goalDoc.get();
+    if (!doc.exists) {
+      await _goalDoc.set(
+        Goal(
+          title: _defaultGoalTitle,
+          targetDate: DateTime.now().add(const Duration(days: 365)),
+        ).toMap(),
+      );
+      return;
+    }
+    final goal = Goal.fromFirestore(doc.data()!);
+    if (!_replaceableGoalTitles.contains(goal.title)) return;
+    await _goalDoc.set(
+      Goal(
+        title: _defaultGoalTitle,
+        targetDate: goal.targetDate,
+        dailyTopicGoal: goal.dailyTopicGoal,
+      ).toMap(),
+    );
   }
 
   /// Upserts one reference note per learning path with its full study
@@ -250,7 +397,7 @@ class FirestoreService {
   Stream<Goal> watchGoal() {
     return _goalDoc.snapshots().map((doc) => doc.exists
         ? Goal.fromFirestore(doc.data()!)
-        : Goal(title: 'Become Azure MLOps Expert', targetDate: DateTime.now().add(const Duration(days: 365))));
+        : Goal(title: _defaultGoalTitle, targetDate: DateTime.now().add(const Duration(days: 365))));
   }
 
   Future<void> updateGoal(Goal goal) async {

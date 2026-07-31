@@ -1,17 +1,17 @@
 import '../models/note.dart';
 
-/// A standalone note (not tied to any learningPathId, since it's its own
-/// track rather than a certification path already in the curriculum seed).
-/// Upserted on every launch by a fixed id, same idempotent pattern as the
-/// guide notes below — safe to re-run, and content edits here always win.
+/// The long-form interview prep note, attached to the Interview Preparation
+/// path in the curriculum. Upserted on every launch by a fixed id, same
+/// idempotent pattern as the guide notes below — safe to re-run, and
+/// content edits here always win.
 Note buildInterviewPrepPlatformNote() {
   final now = DateTime.now();
   return Note(
     id: 'note_interview_prep_platform',
     title: 'Interview Prep — Platform Engineering & AWS',
     body: _interviewPrepPlatform.trim(),
-    learningPathId: null,
-    learningPathTitle: 'Interview Prep',
+    learningPathId: 'path_interview',
+    learningPathTitle: 'Interview Preparation — Platform Engineer',
     createdAt: now,
     updatedAt: now,
   );
@@ -21,46 +21,38 @@ Note buildInterviewPrepPlatformNote() {
 /// the actual content (domains, concepts, code, traps, glossary,
 /// checklist), not just a link out. Seeded once per note, using fixed ids
 /// so re-running never duplicates or clobbers notes you write yourself.
-/// The original artifact link is kept at the top of each note for the
-/// diagram/visual version.
+/// Where an artifact link exists it is kept at the bottom of the note for
+/// the diagram/visual version; newer guides are in-app only.
 List<Note> buildSeedGuideNotes() {
-  final raw = <(String pathId, String pathTitle, String examCode, String url, String content)>[
-    ('path_01', 'AI Fundamentals (AI-901)', 'AI-901',
-        'https://claude.ai/code/artifact/9d2d7c9e-7afa-470f-b933-17985c8cdaa8', _ai901),
-    ('path_02', 'Data Fundamentals (DP-900, optional)', 'DP-900',
-        'https://claude.ai/code/artifact/e95ca055-edae-4de4-97d4-1889e7cc3654', _dp900),
-    ('path_03', 'Python & Data Science Foundations', 'Foundations',
-        'https://claude.ai/code/artifact/778cc77e-44e0-4749-9085-b71ec1caf887', _pythonDs),
-    ('path_04', 'Databricks & SQL (Data Engineer Associate)', 'DEA',
-        'https://claude.ai/code/artifact/9e6694c5-8609-437d-a9d3-11e5f8df37a7', _databricks),
-    ('path_05', 'Core Machine Learning', 'Foundations',
-        'https://claude.ai/code/artifact/c42ad2dd-f415-4dd9-906b-a5006ee84b9b', _coreMl),
-    ('path_06', 'MLOps Engineer Associate (AI-300)', 'AI-300',
-        'https://claude.ai/code/artifact/0846e3d9-13bd-4b87-9143-7df36ca0f8fd', _ai300),
-    ('path_07', 'Docker & Containerization', 'Foundations',
+  final raw = <(String pathKey, String pathTitle, String label, String? url, String content)>[
+    ('az900', 'Azure Fundamentals (AZ-900)', 'AZ-900', null, _az900),
+    ('linux', 'Linux, Networking & Git Foundations', 'Linux & Networking', null, _linuxNetGit),
+    ('az104', 'Azure Administrator Associate (AZ-104)', 'AZ-104', null, _az104),
+    ('terraform', 'Infrastructure as Code (Terraform Associate 003)', 'Terraform', null, _terraform),
+    ('docker', 'Docker & Containerization', 'Docker',
         'https://claude.ai/code/artifact/d7fee4c1-9c16-4b57-bc9d-ad9469d24e3c', _docker),
-    ('path_08', 'Kubernetes Fundamentals (CKA path)', 'CKA',
+    ('cka', 'Kubernetes Administrator (CKA)', 'CKA',
         'https://claude.ai/code/artifact/05bc46c8-1a30-405a-984c-cf8659077bd4', _cka),
-    ('path_09', 'Kubernetes for ML Workloads', 'Foundations',
-        'https://claude.ai/code/artifact/9cef6357-1cf6-424e-a8ab-4385c1882e56', _k8sMl),
-    ('path_10', 'CI/CD & DevOps (AZ-400)', 'AZ-400',
+    ('az400', 'CI/CD & Platform Delivery (AZ-400)', 'AZ-400',
         'https://claude.ai/code/artifact/87c9265b-f7a5-4da2-b68a-4371b83ad05b', _az400),
-    ('path_11', 'MLOps on Azure (Expert)', 'Expert',
-        'https://claude.ai/code/artifact/0261c147-dad7-4d0b-a584-d659be6c9c04', _mlopsExpert),
-    ('path_12', 'Azure AI App and Agent Developer (AI-103, optional)', 'AI-103',
-        'https://claude.ai/code/artifact/72f71fb9-d364-4a49-ba07-ff9040ad0593', _ai103),
+    ('observability', 'Observability & SRE Practices', 'Observability & SRE', null, _observability),
+    ('databricks', 'Databricks & SQL (Data Engineer Associate)', 'DEA',
+        'https://claude.ai/code/artifact/9e6694c5-8609-437d-a9d3-11e5f8df37a7', _databricks),
+    ('capstone', 'Capstone: Productionize PurpleQueue', 'Capstone', null, _capstone),
   ];
 
   final now = DateTime.now();
   return raw.map((entry) {
-    final (pathId, pathTitle, examCode, url, content) = entry;
+    final (pathKey, pathTitle, label, url, content) = entry;
     return Note(
-      id: 'note_guide_$pathId',
-      title: 'Study Guide — $examCode',
-      body: '${content.trim()}\n\n'
-          '────────────────────\n'
-          'Full visual guide with diagrams: $url',
-      learningPathId: pathId,
+      id: 'note_guide_path_$pathKey',
+      title: 'Study Guide — $label',
+      body: url == null
+          ? content.trim()
+          : '${content.trim()}\n\n'
+              '────────────────────\n'
+              'Full visual guide with diagrams: $url',
+      learningPathId: 'path_$pathKey',
       learningPathTitle: pathTitle,
       createdAt: now,
       updatedAt: now,
@@ -68,148 +60,24 @@ List<Note> buildSeedGuideNotes() {
   }).toList();
 }
 
-const _ai901 = '''
-AZURE AI FUNDAMENTALS — AI-901
-Replaces the retired AI-900. Two domains: theory (40–45%), hands-on building in Microsoft Foundry (55–60%). Passing score 700/1000. Assumes basic Python — AI-900 didn't.
-
-DOMAIN 1 — Identify AI concepts & capabilities (40–45%)
-
-Responsible AI — six principles:
-• Fairness — treat all groups equitably; watch for training-data bias
-• Reliability & safety — consistent behavior, fails gracefully
-• Privacy & security — data protected, used only as consented
-• Inclusiveness — works across abilities, languages, backgrounds
-• Transparency — people understand why a decision was made
-• Accountability — humans stay responsible for the system
-
-How generative models work:
-A transformer predicts the next token repeatedly, conditioned on everything before it, until a stop condition. Tokenization splits text into sub-word units. Deployment parameters: temperature (randomness), max tokens (output cap), top_p (nucleus sampling).
-
-AI workload categories:
-• Generative & agentic AI — new content, or multi-step autonomous action
-• Text analysis — keyword extraction, entity detection, sentiment, summarization
-• Speech — recognition (speech-to-text) and synthesis (text-to-speech)
-• Computer vision — image understanding + image-generation models
-• Information extraction — structured data from text/image/audio/video
-
-TRAP: "Agentic AI" means an agent plans and takes a sequence of actions (often calling tools) toward a goal — not just a single chat reply.
-
-DOMAIN 2 — Implement with Microsoft Foundry (55–60%)
-
-Generative AI apps & agents:
-• System prompt sets persistent behavior; user prompt is the actual request
-• Deploy and test a model in the Foundry portal playground before writing code
-• Foundry SDK builds a lightweight chat client programmatically
-• An agent = model + instructions + tools + optional knowledge sources
-• Lightweight client apps call an agent instead of a raw model endpoint
-
-Text, speech, vision:
-• Text analysis via Foundry Tools; translation via Azure Translator or LLM flows
-• Speech-to-text/text-to-speech wired directly into agentic interactions
-• Multimodal models take image + text together and reason about both
-• Image generation + editing (inpainting, mask-based modification)
-
-Information extraction:
-• Azure Content Understanding — the Foundry tool for structured extraction
-• Works across documents/forms, images, and audio/video
-
-TRAP: "Extract vendor, total, due date from scanned invoices" = Content Understanding, not Document Intelligence by name (though it descends from it).
-
-GLOSSARY
-Microsoft Foundry — unified portal + SDK for AI apps/agents, successor to Azure AI Studio
-Agent — model + instructions + tools + knowledge, capable of multi-step action
-Multimodal model — accepts more than one input type (text/image/audio) at once
-Content Understanding — Foundry tool for structured extraction
-Temperature — inference param controlling output randomness
-Context window — max tokens a model can consider at once
-
-EXAM-DAY CHECKLIST
-☐ State all six Responsible AI principles from memory
-☐ Explain how a transformer generates text token by token
-☐ Comfortable with basic Python syntax
-☐ Know the difference between a plain chat call and an agent
-☐ Have actually deployed a model and chatted with it in Foundry
-☐ Content Understanding = the answer for "extract structured data from X"
-''';
-
-const _dp900 = '''
-AZURE DATA FUNDAMENTALS — DP-900
-Four domains, ~60 min, 40–60 questions, pass 700/1000, no coding required.
-
-DOMAIN 1 — Core data concepts (25–30%)
-Data shapes: structured (fixed schema, rows/columns) · semi-structured (tagged, no fixed schema — JSON/XML) · unstructured (no predefined model — images, audio, free text).
-Workload types: OLTP = many small fast transactions, powers live apps. OLAP = large complex queries over historical data for reporting. Batch = scheduled chunks; streaming = continuous.
-Data roles: DBA (provisions/secures databases) · data engineer (builds pipelines) · data analyst (reports/dashboards).
-TRAP: "fast, frequent, small transactions" = OLTP; "historical trends across years" = OLAP.
-
-DOMAIN 2 — Relational data on Azure (20–25%)
-Primary key uniquely identifies a row; foreign key references another table's primary key. Normalization reduces redundancy. ACID = Atomicity, Consistency, Isolation, Durability. T-SQL queries with SELECT/JOIN/etc.
-Services: Azure SQL Database (PaaS, least admin) · Azure SQL Managed Instance (PaaS, near-full compatibility, for lift-and-shift) · SQL Server on Azure VMs (IaaS, most admin) · Azure Database for PostgreSQL/MySQL.
-TRAP: PaaS vs IaaS hinges on "who patches the OS" — SQL DB/Managed Instance = Microsoft patches; VM = you patch.
-
-DOMAIN 3 — Non-relational data on Azure (15–20%)
-NoSQL models: key-value (simplest) · document (JSON-like, self-contained) · column-family (dynamic columns per row, sparse data) · graph (nodes + edges for relationships).
-Services: Azure Cosmos DB (globally distributed, multi-model via SQL/Mongo/Cassandra/Gremlin/Table APIs) · Blob Storage (hot/cool/archive tiers) · Table Storage (lightweight key-value) · Azure Files (SMB/NFS shares).
-TRAP: "globally distributed, low-latency, multi-model" always = Cosmos DB, whatever the data shape.
-
-DOMAIN 4 — Analytics workloads on Azure (25–30%)
-Data warehouse = structured, OLAP-optimized, usually a star schema (central fact table of measures + surrounding dimension tables of descriptive attributes). Data lake = raw data, native format, pre-shaping. ETL transforms before loading; ELT loads raw first, transforms inside the target store.
-Services: Azure Synapse Analytics (warehousing + Spark) · Azure Data Factory (orchestrates ETL/ELT) · Azure Databricks (Spark platform) · Data Lake Storage Gen2 · Power BI.
-Power BI vocabulary: dataset = connected data; report = multi-page visuals over a dataset; dashboard = single-page pinned tiles from one or more reports.
-
-GLOSSARY
-Fact table — central star-schema table with numeric measures
-Dimension table — descriptive attributes joined to a fact table
-Partition key — field distributing data across Cosmos DB partitions
-Request unit (RU) — Cosmos DB's cost currency per operation
-Data mart — subset of a warehouse scoped to one business area
-Schema-on-read vs schema-on-write — lake vs relational table
-
-EXAM-DAY CHECKLIST
-☐ Classify structured/semi-structured/unstructured on sight
-☐ OLTP vs OLAP with one-line examples
-☐ PaaS (Azure SQL DB) vs IaaS (SQL Server on VM)
-☐ Match NoSQL shape to the right Cosmos DB API
-☐ Star schema: fact vs dimension tables
-☐ Power BI dataset vs report vs dashboard
-''';
-
-const _pythonDs = '''
-PYTHON & DATA SCIENCE FOUNDATIONS
-No certification — the toolkit everything after this leans on.
-
-MODULE 1 — Python essentials
-Core types: lists, dicts, tuples, sets. Comprehensions build a list/dict in one expression. Functions with *args/**kwargs (mirrors sklearn/matplotlib call style). Virtual environments (venv/conda) isolate project dependencies. Reading tracebacks: read the last line first, then work upward.
-
-MODULE 2 — NumPy & Pandas
-ndarray = contiguous fixed-type memory block; operations run vectorized, not in a Python loop — this is why for-loops over a DataFrame are a red flag. Broadcasting stretches smaller arrays automatically. DataFrame/Series = labeled 2D table / 1D column. .loc = label-based indexing, .iloc = position-based. groupby = split-apply-combine.
-TRAP: chained indexing like df[df.x>0]['y']=1 can silently write to a copy — use .loc[df.x>0,'y']=1 instead.
-
-MODULE 3 — Statistics & probability for ML
-Mean/median/mode: median resists outliers, mean doesn't. Variance/std = spread. Skew = long tail pulls mean from median. ~68% of values fall within 1 std of the mean, ~95% within 2 (normal distribution rule of thumb). Correlation ranges -1 to 1; correlation ≠ causation. Bayes' theorem underlies naive Bayes classifiers. Hypothesis testing/p-values decide if an effect is real or noise. Confidence intervals give a range, not a point estimate.
-
-MODULE 4 — Data visualization
-Matplotlib = low-level engine; Seaborn = statistically-aware layer on top. Pick the chart from the question, not the data you have open: bar = compare categories, line = trend over time, scatter = relationship between two variables, heatmap = correlation grid across many variables.
-
-MODULE 5 — SQL for data analysis
-Logical execution order: FROM → WHERE → GROUP BY → SELECT → ORDER BY (opposite of how it's typed). INNER JOIN drops unmatched rows either side; LEFT JOIN keeps every row from the left table. Window functions (ROW_NUMBER, RANK, LAG/LEAD) compute per-group values without collapsing rows. CTEs (WITH clause) name intermediate queries for readability. COALESCE for defaults; remember NULL = NULL is never true.
-TRAP: more rows than expected after a JOIN usually means a hidden one-to-many relationship duplicating rows before your GROUP BY — check row counts before/after the join.
-
-GLOSSARY
-Vectorization — apply an operation to a whole array at once
-dtype — fixed data type of a NumPy array/Pandas column
-Outlier — value far from the rest of the distribution, investigate before dropping
-Normalization — rescale numeric features to a common range
-Cardinality — distinct-value count in a column
-Long vs wide format — one row per observation vs one column per variable
-
-READINESS CHECK
-☐ Write a list/dict comprehension without looking it up
-☐ Know when NumPy beats a Python list, and why
-☐ Compute and explain mean/median/std, describe skew in your own data
-☐ Pick the right chart type for a question
-☐ Write a JOIN + GROUP BY query and explain a row-count change
-''';
+/// Guide-note ids written by earlier versions of this seed, when paths were
+/// numbered (path_01…path_12) and the curriculum was the MLOps track. Kept
+/// so the re-sync can delete them; notes written by hand use uuid ids and
+/// are never touched.
+const retiredGuideNoteIds = <String>[
+  'note_guide_path_01',
+  'note_guide_path_02',
+  'note_guide_path_03',
+  'note_guide_path_04',
+  'note_guide_path_05',
+  'note_guide_path_06',
+  'note_guide_path_07',
+  'note_guide_path_08',
+  'note_guide_path_09',
+  'note_guide_path_10',
+  'note_guide_path_11',
+  'note_guide_path_12',
+];
 
 const _databricks = '''
 DATABRICKS & SQL — DATA ENGINEER ASSOCIATE (DEA)
@@ -263,92 +131,6 @@ EXAM-DAY CHECKLIST
 ☐ Read a Spark UI stage summary and diagnose skew vs spill vs undersized cluster
 ☐ Write GRANT/REVOKE and explain permission cascade
 ☐ Know what a Databricks Asset Bundle promotes across dev/test/prod
-''';
-
-const _coreMl = '''
-CORE MACHINE LEARNING
-No certification — the modeling foundation AI-300 and every MLOps topic after it assume you already have.
-
-MODULE 1 — Supervised learning
-Linear/logistic regression — always fit first as a baseline. Decision trees & random forests — trees split on feature thresholds, forests average many trees to cut variance. Gradient boosting (XGBoost/LightGBM) — trees built sequentially correcting prior errors, usually the strongest tabular baseline. SVMs maximize the margin between classes. k-NN classifies by majority vote among nearest neighbors.
-REAL WORLD: start with logistic regression or a small gradient-boosted tree before reaching for anything fancier — you need that baseline number to know if complexity is earning its keep.
-
-MODULE 2 — Unsupervised learning
-k-means partitions into k clusters via nearest-centroid assignment. Hierarchical clustering builds nested clusters, no need to pick k upfront. DBSCAN clusters by density, naturally finds outliers. PCA projects high-dimensional data onto fewer variance-capturing axes. t-SNE/UMAP = nonlinear reduction mainly for 2D visualization.
-
-MODULE 3 — Model evaluation & metrics
-Train/validation/test split: fit on train, tune on validation, test touched once. k-fold cross-validation rotates the held-out slice k times, averages results — better for small datasets. Data leakage: fit scalers/encoders on training data ONLY, then transform validation/test.
-Classification metrics: accuracy, precision (TP/(TP+FP), "of what I flagged, how much was right"), recall (TP/(TP+FN), "of what was true, how much did I catch"), F1, ROC-AUC, confusion matrix. Regression: MAE, MSE, RMSE, R².
-Bias-variance: underfitting = too simple, high bias; overfitting = memorized noise, high variance; the sweet spot follows the trend without chasing every point.
-REAL WORLD: fraud detection wants high recall (catch it all); spam filtering wants high precision (don't bury the inbox) — the tradeoff is a business decision, not math.
-
-MODULE 4 — Feature engineering
-Encode categoricals: one-hot for low cardinality, target/embedding encoding for high. Scale (standardize or min-max) for distance/gradient-based models. Impute missing values with mean/median/mode, or add a "was missing" indicator when missingness is informative itself. Derived features (ratios, date parts) expose structure raw columns hide.
-  preprocess = ColumnTransformer([("scale", StandardScaler(), ["age","income"]), ("encode", OneHotEncoder(handle_unknown="ignore"), ["region"])])
-  X_train_ready = preprocess.fit_transform(X_train); X_test_ready = preprocess.transform(X_test)
-
-MODULE 5 — Deep learning fundamentals
-CNNs: convolutions detect local patterns (edges/textures), pooling shrinks and generalizes, dense layers make the final call. RNNs process sequences step by step carrying hidden state; LSTM/GRU fight vanishing gradients over long sequences. Transformers replace recurrence with self-attention — every position looks at every other position at once; the architecture behind modern LLMs and increasingly vision too. ReLU = default hidden-layer activation; softmax turns final scores into class probabilities.
-
-MODULE 6 — Frameworks
-scikit-learn — tabular data, classical algorithms, consistent .fit()/.predict() API. PyTorch — custom architectures, dynamic graphs, default for most current deep learning. TensorFlow/Keras — production pipelines, mobile/edge export (TF Lite).
-
-GLOSSARY
-Hyperparameter — set before training (learning rate, tree depth), not learned
-Epoch — one full pass through the training dataset
-Regularization — penalizing complexity (L1/L2, dropout) to reduce overfitting
-Class imbalance — one label vastly outnumbers another; accuracy becomes misleading
-
-READINESS CHECK
-☐ Explain bias-variance tradeoff with your own example
-☐ Know which metric to lead with for an imbalanced classification problem
-☐ Build a leakage-free preprocessing pipeline in scikit-learn
-☐ Describe what a convolution and an attention layer are each doing
-☐ Choose between scikit-learn, PyTorch, TensorFlow for a given project
-''';
-
-const _ai300 = '''
-MLOPS ENGINEER ASSOCIATE — AI-300
-Replaces the retired DP-100. The most directly relevant Microsoft exam to this whole app. 40–60 questions, 150 min, pass 700/1000. Five domains.
-
-DOMAIN 1 — Design & implement MLOps infrastructure (15–20%)
-Workspace resources: datastores, compute targets (instance = dev, cluster = training, inference cluster), environments (versioned Docker/conda), components (reusable pipeline steps), registries (share across workspaces).
-IaC: Bicep + Azure CLI to deploy the workspace declaratively. GitHub Actions automates provisioning + CI/CD triggers. Network restriction via private endpoints. Managed identities + RBAC scoped tightly.
-TRAP: "repeatable, auditable, version-controlled infrastructure" = Bicep + GitHub Actions, not manual portal clicks.
-
-DOMAIN 2 — ML model lifecycle & operations (25–30%, largest)
-Orchestrate training: MLflow tracking logs params/metrics/artifacts; AutoML/notebooks/training scripts are three entry points into the same tracking; HyperDrive = automated hyperparameter sweep; training pipelines chain data prep → train → evaluate.
-  with mlflow.start_run(): mlflow.log_param("n_estimators",200); model.fit(...); mlflow.log_metric("f1", f1_score(...)); mlflow.sklearn.log_model(model,"model",registered_model_name="churn-predictor")
-Register/deploy/monitor: register an MLflow model with its artifact + feature spec; run Responsible AI checks before promotion; real-time endpoints = low-latency single predictions, batch endpoints = large offline scoring; progressive rollout with safe rollback; data drift detection + retraining triggers.
-TRAP: real-time endpoints answer "predict this row now" (a live app); batch answers "score this file overnight" — scenario keywords tell you which.
-
-DOMAIN 3 — Design & implement GenAIOps infrastructure (20–25%)
-Foundry projects provisioned via Bicep/CLI like everything else. Deployment options: serverless API (pay-per-call) vs managed compute (dedicated). Provisioned throughput units (PTUs) = reserved capacity for predictable latency at volume. Prompts versioned in Git like code — commit, compare variants, promote the winner.
-TRAP: "high-volume, predictable-latency production" = provisioned throughput; "sporadic, low-volume, cost-sensitive" = serverless.
-
-DOMAIN 4 — GenAI quality assurance & observability (10–15%)
-Four core metrics: groundedness (backed by retrieved facts?), relevance (answers the question?), coherence (logical, ordered?), fluency (natural language?) — scored against a curated test dataset, plus a separate risk/safety pass. Foundry continuous monitoring watches production traffic, not just pre-release. Track latency/throughput and token cost per feature/customer. Logging/tracing gives step-by-step visibility into what an agent or RAG pipeline did.
-REAL WORLD: instrument token cost from day one — a RAG feature fine in testing can quietly become the biggest line item in the Azure bill once traffic ramps.
-
-DOMAIN 5 — Optimize generative AI systems (10–15%)
-RAG tuning knobs: chunk size, similarity threshold, embedding model choice, hybrid search (semantic + keyword). A/B test RAG changes against real traffic, not just offline metrics. Fine-tuning + synthetic data adapts a foundation model to a narrow domain.
-TRAP: right documents retrieved but answer still vague = a generation/prompt problem, not a retrieval problem — diagnose which half of RAG is actually failing.
-
-GLOSSARY
-MLOps vs GenAIOps — traditional models vs generative AI apps/agents, together "AIOps"
-Data drift — production input diverging from training distribution
-Canary deployment — small traffic slice to a new model version first
-PTU — provisioned throughput unit
-Groundedness — how well an answer is supported by retrieved source material
-Top-k — number of retrieved chunks passed to the generation model
-
-EXAM-DAY CHECKLIST
-☐ Provision an ML workspace with Bicep + wire into GitHub Actions
-☐ Trace the full lifecycle: MLflow run → monitored production endpoint
-☐ Know real-time vs batch endpoints, serverless vs provisioned throughput
-☐ Name all four GenAI quality metrics and what each measures
-☐ Comfortable with RAG tuning knobs: chunk size, top-k, hybrid search
-☐ Hands-on time in Microsoft Foundry, not just Azure ML
 ''';
 
 const _docker = '''
@@ -434,43 +216,6 @@ EXAM-DAY CHECKLIST
 ☐ Practice fast — troubleshooting alone is 30% of the score
 ''';
 
-const _k8sMl = '''
-KUBERNETES FOR ML WORKLOADS
-No certification — the Kubernetes layer specific to serving/orchestrating ML, on top of CKA fundamentals.
-
-MODULE 1 — Kubeflow pipelines
-A component = one containerized, reusable step with typed inputs/outputs. A pipeline = a DAG of components, defined in Python via the Kubeflow Pipelines SDK. A run = one execution with lineage tracked automatically. Conditional/recurring runs: branch on a metric (only deploy if accuracy clears a bar), or schedule re-runs.
-REAL WORLD: Kubeflow's real value isn't the DAG syntax — every run's inputs, code version, and outputs are captured automatically, so "which data trained the production model" stays answerable months later.
-
-MODULE 2 — Model serving with KServe / Seldon
-KServe = a CRD (InferenceService) standardizing serving across frameworks. Seldon Core = similar, strong focus on complex inference graphs (pre/post-processing, A/B tests, bandits). Scale-to-zero: idle pods scale to nothing, cold-start on next request, saves GPU cost for spiky traffic. Canary rollout routes a slice of traffic to a new version first.
-  apiVersion: serving.kserve.io/v1beta1
-  kind: InferenceService
-  metadata: {name: churn-predictor}
-  spec: {predictor: {sklearn: {storageUri: "gs://my-bucket/churn-model", minReplicas: 0}}}
-
-MODULE 3 — GPU scheduling in Kubernetes
-The NVIDIA device plugin advertises nvidia.com/gpu as a schedulable resource on GPU nodes — without it running, a node's GPUs are invisible to Kubernetes entirely. GPU requests are whole-unit only (unlike fractional CPU). Node taints commonly keep GPU nodes reserved for GPU workloads. Time-slicing/MIG share one physical GPU across multiple pods.
-TRAP: requesting nvidia.com/gpu: 0.5 doesn't work like CPU fractional requests — standard scheduling is whole-unit; fractional sharing needs MIG or time-slicing configured separately.
-
-MODULE 4 — Autoscaling inference workloads
-HPA (built-in) scales replica count on CPU/memory (or custom metrics), minimum 1 replica. KEDA (add-on) scales on external events — queue depth, request rate — and can scale to zero, which HPA cannot. Cluster Autoscaler adds/removes nodes when pods can't be scheduled on existing capacity. Cold start = latency penalty loading a model into a freshly scaled pod — a real tradeoff, not free.
-REAL WORLD: a GPU-backed service idle most of the day suits KEDA + scale-to-zero; a latency-sensitive endpoint under constant traffic doesn't — the cold start alone could blow an SLA.
-
-GLOSSARY
-CRD — Custom Resource Definition, how KServe/Seldon extend Kubernetes
-Cold start — latency loading a model into a freshly scaled pod
-MIG — Multi-Instance GPU, NVIDIA hardware partitioning
-ScaledObject — the KEDA resource defining what metric drives scaling
-
-READINESS CHECK
-☐ Describe a Kubeflow pipeline as a DAG of independently-logged components
-☐ Write a minimal KServe InferenceService manifest from memory
-☐ Explain why GPU requests are whole-unit and what a device plugin does
-☐ Explain when KEDA's scale-to-zero helps vs. hurts a workload
-☐ Know the difference between HPA, KEDA, and the Cluster Autoscaler
-''';
-
 const _az400 = '''
 DEVOPS ENGINEER EXPERT — AZ-400
 Expert level, pass 700/1000. Not retiring — refreshed July 27, 2026 (content below already reflects that version). Five domains, one dominant.
@@ -510,102 +255,6 @@ EXAM-DAY CHECKLIST
 ☐ Know where each scan type (dependency/code/secret/container) plugs into a pipeline
 ☐ Read a basic KQL query against Application Insights data
 ☐ Remember: pipelines alone are over half the exam
-''';
-
-const _mlopsExpert = '''
-MLOPS ON AZURE — EXPERT
-No single certifying exam — the architectural/organizational layer AI-300 assumes a mature team already has.
-
-MODULE 1 — MLOps maturity model
-Level 0 manual (notebooks, manual handoffs) → 1 tracked (MLflow logging, still manual deploy) → 2 automated training (scheduled/triggered retraining) → 3 automated deployment (CI/CD promotes without manual steps) → 4 full CI/CD/CT (production monitoring auto-triggers retraining).
-REAL WORLD: jumping straight to Level 4 before 1–2 are solid is a classic failure — automating retraining around untracked, unreliable experiments just ships bad models faster.
-
-MODULE 2 — End-to-end CI/CD/CT pipelines
-CI = test code + data validation before training starts. CD = promotes a model through stages gated by evaluation metrics, not just "it compiled." CT (continuous training) = the loop closes: a trigger (schedule, drift signal, new data volume) kicks off retraining automatically. CT is the piece most teams skip — without it, "MLOps" is DevOps applied to a model artifact that never updates itself.
-
-MODULE 3 — Model monitoring & data drift detection
-Data drift = input distribution shifts from training. Concept drift = the input-output relationship changes even if inputs look the same (fraud patterns evolve). PSI (Population Stability Index) and KL divergence quantify "how different." Ground-truth lag means monitoring often works with proxy signals for days/weeks before real outcomes are known.
-REAL WORLD: a drift alert doesn't automatically mean retrain — it means go look; sometimes it's a real but temporary anomaly (a holiday spike) that shouldn't be trained in.
-
-MODULE 4 — Feature stores
-Solves training-serving skew: a feature computed one way in a notebook, subtly differently in the serving path. One feature definition feeds both an offline store (bulk/historical, training) and an online store (low-latency, serving). Point-in-time correctness prevents future data leaking into training. Feast is the common open-source option; Azure ML has a managed feature store on the same split.
-
-MODULE 5 — Model governance & lineage
-Lineage: an unbroken, queryable chain from raw data → features → training run → model version → deployment. Model cards document intended use, training data summary, limitations, evaluation results. Approval workflows require recorded sign-off tied to evidence. Audit trail: who deployed what, when, why.
-REAL WORLD: "why did the model deny this loan application" needs an answer traced through lineage to a specific model version's documented behavior — not a shrug.
-
-MODULE 6 — A/B testing & canary deployments
-Canary answers "is it safe?" (small slice, watched for errors/latency). A/B test answers "is it actually better?" (deliberate, longer-running, measures a business metric with statistical rigor). Statistical significance needs enough traffic/time — peeking early inflates false positives. Guardrail metrics (latency, error rate) catch a hidden regression behind an apparent "win."
-
-MODULE 7 — Cost optimization for ML workloads
-Spot/low-priority compute for interruptible, checkpointable training. Right-sizing — an oversized always-on inference cluster is pure waste. Autoscaling/scale-to-zero — pay for GPU capacity only when there's traffic. Model compression (quantization, distillation) shrinks footprint with minimal accuracy loss. Batch vs real-time: don't pay for a live endpoint when a nightly job would do. Track token/compute cost per feature/customer for GenAI specifically.
-REAL WORLD: the highest-leverage cost fix in most platforms isn't a smarter model — it's noticing an endpoint left running for a project that shipped six months ago.
-
-MODULE 8 — MLflow integration
-Tracking server = central store for every run's params/metrics/artifacts. Model registry = versioned models with stage transitions (staging → production → archived) and approval gates. Model flavors decouple storage from deployment target. Projects package code + environment for reproducibility.
-  client.transition_model_version_stage(name="churn-predictor", version=7, stage="Production", archive_existing_versions=True)
-
-GLOSSARY
-Training-serving skew — feature computed differently at train vs. inference time
-PSI — Population Stability Index, a drift metric
-Model card — standardized doc of a model's use/data/limitations
-Guardrail metric — secondary metric watched during an experiment
-Quantization — reduced numeric precision to shrink/speed up a model
-CT — continuous training, automated retraining triggered by schedule/drift/data
-
-READINESS CHECK
-☐ Place a real team on the 0–4 maturity ladder and name the next step
-☐ Explain data drift vs. concept drift with a distinct example of each
-☐ Understand why a feature store exists, in terms of the bug it prevents
-☐ Trace a hypothetical production model back through full lineage
-☐ Know when a canary is enough vs. when a full A/B test is warranted
-☐ Name three concrete cost levers beyond "use a smaller model"
-''';
-
-const _ai103 = '''
-AZURE AI APP AND AGENT DEVELOPER — AI-103
-Replaces the retired AI-102. Where AI-901 is conceptual, this is hands-on building: agents, RAG, multimodal generation, in Python. Pass 700/1000. Five domains.
-
-DOMAIN 1 — Plan & manage an Azure AI solution (25–30%)
-Model choice: LLM (complex reasoning) · small model (low latency/cost, edge) · multimodal (image/audio/video input) · Foundry Tools (prebuilt capability like Speech/Search/Content Understanding). Setup: Foundry project structure, deployment options, CI/CD integration. Quotas/cost, monitoring (performance, drift, safety events, grounding quality, search index health). Security: managed identity, private networking, keyless credentials, RBAC — no long-lived secrets by default. Responsible AI: safety filters/guardrails, evaluators, trace logging + provenance metadata for auditing, agent governance via oversight modes/constraints/tool-access controls.
-TRAP: "keyless" means managed identity/workload identity federation, not "no identity at all."
-
-DOMAIN 2 — Implement generative AI & agentic solutions (30–35%, largest)
-Building apps: deploy/consume LLMs, small, code, multimodal models via Foundry SDKs; implement RAG; tool-augmented multistep reasoning pipelines; evaluate for fabrication/relevance/quality/safety.
-Building agents: define role/goal/conversation-tracking/tool schema; integrate function-calling + conversation memory; tools = APIs, knowledge stores, search, Content Understanding, custom functions; multi-agent orchestration (an orchestrator delegates to specialist agents, each with its own tools); autonomous/semi-autonomous workflows keep an approval step for high-stakes actions.
-Optimize: prompt engineering + parameters (temperature, top_p, max tokens); self-critique/chain-of-thought reflection loops; observability (tracing, token analytics, safety signals, latency); hybrid orchestration mixing models with a rules engine where deterministic logic is more reliable.
-  tools = [{"type":"function","function":{"name":"lookup_order",...}}]
-  response = client.chat.completions.create(model="gpt-4o-mini", messages=messages, tools=tools, tool_choice="auto")
-  if response.choices[0].message.tool_calls: result = lookup_order(**args)
-TRAP: multiple specialized agents coordinating on one task = multi-agent orchestration; a single agent with many tools is a different pattern even though both use tool-calling.
-
-DOMAIN 3 — Implement computer vision solutions (10–15%)
-Generate/edit: text-to-image/video, inpainting, mask-based prompt-driven edits. Multimodal understanding: visual context analysis, captions, visual Q&A, accessibility alt-text. Content Understanding for vision: single-task vs pro-mode pipelines, object/region identification. Responsible AI: filter unsafe visual content, detect indirect prompt injection (malicious text embedded inside an uploaded image).
-TRAP: text embedded in an image trying to redirect a multimodal model = indirect prompt injection, distinct from a user directly typing a bad prompt.
-
-DOMAIN 4 — Implement text analysis solutions (10–15%)
-Entity/topic/summary extraction and structured JSON output via generative prompting + Foundry Tools. Sentiment/tone/safety detection. Translation via Azure Translator or LLM-powered flows. Speech as an agent modality: speech-to-text/text-to-speech wired directly in, plus multimodal reasoning straight from audio.
-  system = "Extract vendor, total, and due_date as JSON. No prose."
-  response = client.chat.completions.create(model="gpt-4o-mini", messages=[...], response_format={"type":"json_object"})
-
-DOMAIN 5 — Implement information extraction solutions (10–15%)
-Ingest/index documents, images, audio, video. Search modes: semantic, hybrid, vector — chosen by how well pure keyword matching would serve the query. Enrichment skills extract structure from text/images/layout during ingestion. Content Understanding analyzers produce clean structured/markdown output specifically shaped for downstream agent reasoning — retrieval pipelines are wired in as a callable tool an agent reaches for mid-conversation, not just a chat backend.
-
-GLOSSARY
-Orchestration — coordinating multiple agents/tool calls toward one goal
-Indirect prompt injection — malicious instructions hidden in retrieved/uploaded content
-Hybrid search — vector/semantic similarity + keyword matching in one query
-Function-calling — a model requesting execution of a defined tool mid-response
-Groundedness — how well an answer is supported by retrieved content, not just memory
-Provenance metadata — records of what data/tool call produced an agent action
-
-EXAM-DAY CHECKLIST
-☐ Justify a model choice against a stated latency/cost constraint
-☐ Have built a multi-agent flow with distinct tool schemas per agent
-☐ Comfortable writing Python against the Foundry SDK for models and agents
-☐ Explain indirect prompt injection and name a mitigation
-☐ Know when hybrid search beats pure vector or pure keyword search
-☐ Describe how Content Understanding output is shaped for agent/RAG use
 ''';
 
 const _interviewPrepPlatform = '''
@@ -1769,4 +1418,300 @@ FINAL CHECKLIST — before the interview
   ready for a production-scenario question (Ch26)
 ☐ Can zoom out to the platform-as-product framing at least once per
   major answer, unprompted (Ch1, Ch27)
+''';
+
+const _az900 = '''
+AZURE FUNDAMENTALS — AZ-900
+Entry-level, 45–50 questions, pass 700/1000, no prerequisites. Three domains. If you have run AWS in production, this exam is a vocabulary test, not a knowledge test — the concepts transfer, the names do not.
+
+DOMAIN 1 — Cloud concepts (25–30%)
+Service models: IaaS (you manage OS upward — VMs) · PaaS (you manage app + data only — App Service, Azure SQL Database) · SaaS (you manage nothing but your data — Microsoft 365). Shared responsibility shifts left as you move IaaS → PaaS → SaaS; the customer always owns data, identities, and access, in every model.
+Economics: capex (buy hardware up front, depreciate) vs. opex (pay per consumption, no asset). Benefits vocabulary the exam grades on: high availability, scalability (vertical = bigger, horizontal = more), elasticity (automatic), reliability, predictability, security, governance, manageability.
+Cloud models: public, private, hybrid. Azure Arc extends Azure management to on-prem and other clouds — this is the "manage my AWS/on-prem estate from Azure" answer.
+TRAP: scalability vs. elasticity — scaling is the capability, elasticity is doing it automatically in response to demand.
+
+DOMAIN 2 — Azure architecture & services (35–40%)
+Hierarchy, top down: management group → subscription → resource group → resource. RBAC and Policy assigned at any level inherit downward. There is no AWS equivalent of a resource group — it is a lifecycle boundary, and deleting it deletes everything inside.
+Geography: region (like an AWS region) · availability zone (like an AWS AZ, physically separate datacenters in one region) · region pair (paired for platform-managed replication, no AWS equivalent) · sovereign regions (Azure Government, Azure China).
+Compute: Virtual Machines (EC2) · VM Scale Sets (Auto Scaling groups) · App Service (Elastic Beanstalk/App Runner) · Azure Functions (Lambda) · Container Instances (Fargate task) · Container Apps (App Runner/ECS-serverless) · AKS (EKS) · Azure Virtual Desktop (WorkSpaces).
+Networking: Virtual Network (VPC) · subnet · Network Security Group (security group + NACL combined) · VNet peering (VPC peering) · VPN Gateway (Site-to-Site VPN) · ExpressRoute (Direct Connect) · Azure DNS (Route 53) · Load Balancer (NLB, layer 4) · Application Gateway (ALB, layer 7, includes WAF) · Front Door (CloudFront + global routing) · Traffic Manager (Route 53 latency/geo routing).
+Storage: Blob (S3) with hot/cool/cold/archive tiers · Files (EFS/FSx, SMB and NFS) · Disks (EBS) · Queues (SQS) · Tables (DynamoDB-ish key-value). Redundancy: LRS (3 copies, one datacenter) · ZRS (across zones) · GRS (to the paired region, read only on failover) · GZRS (both). AzCopy, Storage Explorer, and Azure Migrate move data in.
+Identity: Microsoft Entra ID (formerly Azure AD) is the identity plane — it is not IAM. IAM's closest equivalent is Entra ID plus Azure RBAC together. Authentication vs. authorization, SSO, MFA, Conditional Access, passwordless. External Identities covers B2B guests.
+TRAP: Entra ID is not a directory service for VMs — domain-joining VMs is Entra Domain Services, a separate offering.
+
+DOMAIN 3 — Management & governance (30–35%)
+Cost: Total Cost of Ownership calculator (before migrating) vs. Pricing calculator (before deploying) vs. Cost Management + Billing (after spending). Cost drivers: resource type, region, egress bandwidth, and reservations/spot/hybrid-benefit discounts. Tags drive cost allocation and are enforceable through Policy.
+Governance: Azure Policy evaluates deployments against rules and can deny, audit, or remediate — the closest AWS analogue is SCPs plus Config rules, evaluated at deployment time. Resource locks (CanNotDelete, ReadOnly) stop accidental destruction and survive RBAC. Microsoft Purview covers data governance. The Trust Center, Service Trust Portal, and compliance offerings cover the paperwork questions.
+Tooling: portal · Azure CLI · Azure PowerShell · Cloud Shell · ARM templates and Bicep (CloudFormation/CDK) · Azure Arc for hybrid.
+Monitoring: Azure Monitor is the umbrella (metrics + logs); Log Analytics workspace stores logs and is queried with KQL; Application Insights is APM; Service Health is platform-side incidents; Azure Advisor recommends across cost, security, reliability, performance, operational excellence.
+TRAP: Advisor recommends, Policy enforces, Service Health tells you Microsoft broke something. Exam questions hinge on which of those three a scenario is actually asking for.
+
+REAL WORLD: the resource-group cascade is the single biggest behavioral difference from AWS. Group by lifecycle, not by service type — everything that gets deleted together belongs in the same resource group.
+
+GLOSSARY
+Resource group — lifecycle and deletion boundary for resources, no AWS equivalent
+Management group — container above subscriptions, roughly an AWS Organizations OU
+Region pair — Microsoft-designated partner region for platform-managed replication
+Conditional Access — policy engine deciding when MFA or block applies to a sign-in
+Azure Arc — projects non-Azure servers and clusters into Azure management
+
+READINESS CHECK
+☐ Recite the AWS→Azure mapping for compute, storage, network, identity, and IaC
+☐ Explain the four-level scope hierarchy and what inherits down it
+☐ Pick the right redundancy option (LRS/ZRS/GRS/GZRS) from a stated requirement
+☐ Say which of TCO calculator / Pricing calculator / Cost Management fits a scenario
+☐ Distinguish Advisor vs. Policy vs. Service Health in one sentence each
+☐ Know that customers always own data and identity, in every service model
+''';
+
+const _linuxNetGit = '''
+LINUX, NETWORKING & GIT FOUNDATIONS
+No certification. The layer underneath every Azure, Terraform, and Kubernetes topic — and where platform-engineering interviews go when they want to find the bottom of your knowledge.
+
+MODULE 1 — Linux filesystem and permissions
+Layout: /etc config · /var/log logs · /usr/bin binaries · /opt third-party · /proc kernel and process state. Permissions are three triads (user, group, other) over read(4)/write(2)/execute(1); 644 is a normal file, 755 an executable or directory, 600 a private key. Ownership via chown, group membership via usermod -aG. Special bits: setuid, setgid, sticky bit on /tmp.
+TRAP: a directory needs execute (x) to be traversed at all — read alone lets you list names and nothing else.
+
+MODULE 2 — Processes and systemd
+ps, top, htop for what is running; kill/kill -9 for stopping it; nice for priority. systemd is the init system: unit files in /etc/systemd/system, managed with systemctl start/stop/enable/status, logs read with journalctl -u name -f. A service that dies on logout is a service you forgot to daemonize.
+Troubleshooting order that actually works: is the process running (systemctl status) → is it listening (ss -tulpn) → can something reach it (curl localhost) → can something remote reach it (firewall/NSG).
+
+MODULE 3 — Shell and text processing
+grep for lines, sed for substitution, awk for columns, jq for JSON, xargs for turning output into arguments. Pipes and redirection: stdout is 1, stderr is 2, 2>&1 merges them. Scripting essentials: set -euo pipefail at the top of every script, quote every variable expansion, and prefer explicit exit codes.
+  ss -tulpn | grep :443
+  journalctl -u nginx --since "10 min ago" | grep -i error
+  az vm list -o json | jq -r ".[].name"
+
+MODULE 4 — SSH and keys
+Key pair auth: private key stays on your machine at 600, public key goes into authorized_keys. Agent forwarding vs. ProxyJump for bastion hops — prefer ProxyJump. Config lives in ~/.ssh/config and is worth using: aliases, jump hosts, key selection per host. Debug with ssh -vvv, which will name the exact auth step that failed.
+
+MODULE 5 — TCP/IP and subnetting
+CIDR: /24 = 256 addresses, /25 = 128, /26 = 64, /27 = 32. Azure reserves five addresses per subnet (AWS reserves five too, slightly differently) — a /29 gives you three usable. Private ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16. Non-overlapping ranges matter the moment you peer two networks or connect on-prem.
+TCP handshake (SYN, SYN-ACK, ACK) and where it fails: no SYN-ACK means blocked or nothing listening; RST means something actively refused. Layer 4 vs. layer 7 load balancing is the difference between routing a connection and routing a request.
+
+MODULE 6 — DNS
+Resolution path: hosts file → stub resolver → recursive resolver → root → TLD → authoritative. Record types that matter: A/AAAA (address), CNAME (alias, cannot coexist with other records at the same name), MX, TXT (verification/SPF), NS, SOA, and SRV. TTL controls cache lifetime — lower it before a migration, not during one.
+TRAP: "DNS propagation" is not a thing; it is caches expiring on their own TTL schedule. Plan cutovers around the TTL you set 48 hours earlier.
+
+MODULE 7 — TLS and certificates
+Handshake: client hello → server certificate → key exchange → encrypted session. The chain matters: leaf → intermediate → root; missing intermediates are the most common "works in my browser, fails from curl" bug. Check expiry and chain with openssl s_client -connect host:443 -showcerts. SAN, not CN, is what modern clients validate.
+
+MODULE 8 — Git for teams
+Branching: short-lived feature branches off main, rebase to keep history linear, merge commits when you want the merge recorded. rebase rewrites history and is unsafe on shared branches; merge is always safe. Recovery: git reflog finds anything you think you lost; git revert undoes a commit publicly, git reset moves your branch privately. Conflict resolution is reading both sides, not accepting theirs by reflex.
+REAL WORLD: a secret committed once is committed forever — rotate the credential first, scrub history second. Never the other way round.
+
+GLOSSARY
+Unit file — systemd's declarative definition of a service
+CIDR — network prefix notation, where the number is how many bits are fixed
+Recursive vs. authoritative resolver — one asks on your behalf, one holds the answer
+SAN — Subject Alternative Name, the certificate field browsers actually check
+Reflog — local log of every position HEAD has held, your undo history
+
+READINESS CHECK
+☐ Read and set permissions without reaching for a chmod calculator
+☐ Debug a dead service through systemctl, ss, and journalctl in that order
+☐ Subnet a /24 into usable ranges on a whiteboard, from memory
+☐ Trace a DNS lookup end to end and name what each step returns
+☐ Explain a TLS chain failure and how you would confirm it with openssl
+☐ Recover a "lost" commit with reflog and explain rebase vs. merge safety
+''';
+
+const _az104 = '''
+AZURE ADMINISTRATOR ASSOCIATE — AZ-104
+The core platform-engineering certification and the prerequisite for AZ-400. 40–60 questions including case studies, pass 700/1000. Five domains, all hands-on. This is where AWS multi-account governance experience converts directly into Azure credibility.
+
+DOMAIN 1 — Identity & governance (20–25%)
+Entra ID objects: users (member vs. guest), groups (assigned vs. dynamic membership), administrative units for scoping admin rights, service principals and managed identities for workloads. Self-service password reset, MFA, and Conditional Access policies gate sign-in.
+Azure RBAC: role definition (what actions) + security principal (who) + scope (where) = role assignment. Scope inherits management group → subscription → resource group → resource. Built-in roles to know cold: Owner, Contributor, Reader, User Access Administrator. Custom roles are JSON with Actions, NotActions, DataActions, and AssignableScopes.
+Governance: management groups mirror an AWS Organizations OU tree. Azure Policy definitions and initiatives with effects deny, audit, append, modify, deployIfNotExists. Resource locks (CanNotDelete, ReadOnly) apply regardless of RBAC. Tags for cost allocation, enforced by Policy. Cost Management budgets and alerts.
+TRAP: RBAC is additive — there is no deny in a role assignment. An explicit deny assignment (created by Azure Blueprints or Managed Apps) is the only thing that overrides an allow. Policy denies at deployment time, which is a different mechanism entirely.
+
+DOMAIN 2 — Storage (15–20%)
+Storage account is the boundary for redundancy, firewall, and access keys — everything (blob, file, queue, table) lives inside one. Performance tiers standard vs. premium; access tiers hot, cool, cold, archive with rehydration latency on archive. Redundancy LRS, ZRS, GRS, GZRS, and RA-GRS for readable secondary.
+Access control, in order of preference: Entra ID + RBAC (best) → stored access policy backed SAS (revocable) → ad-hoc SAS → account keys (worst, rotate them). Network access: service endpoints vs. private endpoints — private endpoint gives the account a private IP inside your VNet and is the answer whenever "no public access" appears in the requirement.
+Azure Files supports SMB and NFS, with AD or Entra Domain Services auth for SMB. AzCopy and Storage Explorer for data movement; lifecycle management rules automate tiering and deletion.
+
+DOMAIN 3 — Compute (20–25%)
+VMs: sizing families, availability sets (fault/update domains within a datacenter) vs. availability zones (across datacenters) — zones give the stronger SLA. Custom images and the Azure Compute Gallery for image distribution. Disks: OS vs. data vs. temp; the temp disk is not persistent and will lose data on deallocation.
+VM Scale Sets: uniform vs. flexible orchestration, autoscale rules on metric or schedule.
+App Service: plans determine cost and scale; deployment slots enable swap-based blue-green; scale up (bigger plan) vs. scale out (more instances).
+Containers: Container Instances for single tasks, Container Apps for serverless microservices, AKS for full orchestration with node pools, cluster autoscaler, and integrated ACR.
+TRAP: resizing a VM restarts it; adding a data disk does not. Deallocating stops compute billing but keeps disk billing — stopping from inside the guest OS does neither.
+
+DOMAIN 4 — Virtual networking (15–20%)
+VNets and subnets, address spaces that must not overlap with anything you will ever peer. NSGs are stateful and apply at subnet or NIC, evaluated by priority with default rules at the bottom; application security groups let rules target workload labels instead of IPs. Effective security rules is the tool that ends most "why is this blocked" arguments.
+Peering is non-transitive — hub-and-spoke needs a gateway, route server, or firewall in the hub to route between spokes. User-defined routes override system routes and are how traffic gets forced through a firewall appliance.
+Name resolution: Azure-provided DNS, private DNS zones linked to VNets, and the private endpoint DNS records that make them resolvable.
+Load balancing: Load Balancer (layer 4, regional) · Application Gateway (layer 7, path/host routing, WAF) · Front Door (global, edge) · Traffic Manager (DNS-based). Hybrid: VPN Gateway (site-to-site, point-to-site) and ExpressRoute for private circuits.
+
+DOMAIN 5 — Monitor & maintain (10–15%)
+Azure Monitor collects platform metrics automatically; logs need a diagnostic setting pointing at a Log Analytics workspace before anything is queryable. KQL is the query language, alert rules fire action groups, and Network Watcher provides connection troubleshoot, NSG flow logs, and next-hop diagnostics.
+  AzureDiagnostics | where TimeGenerated > ago(1h) | summarize count() by Resource, ResultType
+Backup and recovery: Recovery Services vault, backup policies, soft delete, and Azure Site Recovery for replication and failover. Restore is the part that must be rehearsed — a backup you have never restored is a hypothesis.
+TRAP: no diagnostic setting means no logs, retroactively. You cannot query what was never collected, and the exam loves that scenario.
+
+REAL WORLD: the three things that break real Azure estates are overlapping address spaces chosen early, RBAC granted at subscription scope out of convenience, and storage accounts left open to public network access. All three are cheap to prevent and expensive to unwind.
+
+GLOSSARY
+Managed identity — Entra identity assigned to a resource so it authenticates without a secret
+Effective security rules — computed view of every NSG rule applying to a NIC
+Private endpoint — private IP in your VNet for a PaaS service, replacing public access
+User-defined route — custom route table entry that overrides Azure system routing
+Recovery Services vault — container for backups and Site Recovery replication
+
+EXAM-DAY CHECKLIST
+☐ Explain RBAC inheritance and why role assignments are additive
+☐ Choose between service endpoint and private endpoint from a requirement
+☐ Pick availability set vs. availability zone and justify the SLA difference
+☐ Debug a blocked flow using effective security rules and Network Watcher
+☐ Know that VNet peering is non-transitive and what to put in the hub
+☐ Write a KQL query without a template, and know a diagnostic setting must exist first
+☐ Perform a restore, not just configure a backup
+''';
+
+const _terraform = '''
+INFRASTRUCTURE AS CODE — HASHICORP TERRAFORM ASSOCIATE (003)
+57 questions, 60 minutes, multiple choice, valid two years. The exam is broad and shallow; real competence is in state and modules. Free study path: HashiCorp tutorials plus your own Azure free-tier subscription.
+
+OBJECTIVE 1–2 — IaC concepts and Terraform's purpose
+Declarative (describe the end state, Terraform computes the diff) vs. imperative (describe the steps). Benefits: version control, review, repeatability, drift detection, and a plan you can read before anything changes. Terraform is cloud-agnostic and provider-based; ARM/Bicep and CloudFormation are single-cloud. State is what makes Terraform different from a shell script — it maps config to real resource ids.
+
+OBJECTIVE 3 — Core workflow
+write → init (download providers, configure backend) → plan (compute diff, change nothing) → apply (execute) → destroy. terraform fmt formats, validate checks syntax and internal consistency without touching the cloud. Read every plan: + create, ~ update in place, -/+ replace (destroy then create), - destroy. The -/+ marker is the one that causes outages.
+  terraform init -backend-config=backend.hcl
+  terraform plan -out=tfplan
+  terraform apply tfplan
+
+OBJECTIVE 4 — HCL and the language
+Blocks: terraform (version constraints, backend) · provider · resource · data (read-only lookup) · variable · local · output · module. Variable precedence, lowest to highest: default → environment TF_VAR_ → terraform.tfvars → -var-file → -var on the command line. Types and validation blocks catch bad input early; sensitive = true keeps values out of CLI output (but not out of state). Expressions: for_each, count, conditionals, dynamic blocks, and the splat operator.
+TRAP: count uses positional indexes, so removing the middle element renumbers and recreates everything after it. for_each keys by a string and is stable — prefer it for anything you care about.
+
+OBJECTIVE 5 — State
+Local state is a JSON file; remote state (Azure Storage, S3, HCP Terraform) adds shared access and locking. Locking prevents two concurrent applies corrupting state; force-unlock is a last resort, not a workflow. Commands: state list, state show, state mv (rename without recreating), state rm (forget without destroying), import (adopt an existing resource), and the newer moved block that records refactors in code instead of in CLI history.
+State contains every attribute, including secrets, in plaintext. Encrypt the backend, restrict access to it, and never commit it.
+TRAP: terraform destroy deletes what state knows about. If state is lost, Terraform will happily try to create duplicates of resources that already exist — recovery is import, one resource at a time.
+
+OBJECTIVE 6 — Modules
+A module is any directory of .tf files. Root module calls child modules; inputs are variables, outputs are how a parent reads values back. Source can be a local path, a Git URL, or a registry reference — pin registry modules by version, always. Good module design: one logical unit, no hardcoded environment values, outputs for everything a caller might need.
+
+OBJECTIVE 7 — Terraform on Azure in practice
+The azurerm provider authenticates by Azure CLI (local), service principal, managed identity, or OIDC federation (pipelines — no stored secret). Pin the provider version. Standard layout: separate state per environment, a backend in Azure Storage with a lock, and plan-on-pull-request with apply gated behind approval.
+REAL WORLD: humans should not run apply against production. Once plan runs in CI and apply is pipeline-only, drift becomes visible instead of normal.
+
+OBJECTIVE 8–9 — HCP Terraform and workflows
+Workspaces isolate state; runs execute plan/apply remotely with a shared log. VCS-driven workflow triggers on push. Private registry hosts internal modules. Sentinel and OPA add policy-as-code gates that run between plan and apply — the "prevent anyone deploying an untagged resource" answer.
+
+GLOSSARY
+Drift — real infrastructure diverging from what state and config describe
+Backend — where state is stored and locked
+Provider — plugin translating Terraform resources into an API's calls
+moved block — declares a refactor so Terraform renames instead of destroy/create
+Plan file — saved, reviewable diff that apply can execute unchanged
+
+EXAM-DAY CHECKLIST
+☐ Read a plan and predict create vs. update vs. replace before running it
+☐ Explain variable precedence in order without hesitating
+☐ Know when to use import, state mv, state rm, and moved
+☐ Explain why for_each beats count for stable resources
+☐ Say what is in state, why it is sensitive, and how locking protects it
+☐ Authenticate a pipeline with OIDC rather than a stored service principal secret
+''';
+
+const _observability = '''
+OBSERVABILITY & SRE PRACTICES
+No certification, and the topic that separates "can deploy it" from "can run it." Interviewers use this section to find out whether you have carried a pager.
+
+MODULE 1 — The three signals
+Metrics: numeric, cheap, aggregated, good for alerting and trends, bad for explaining a single request. Logs: high cardinality, expensive at volume, good for forensics. Traces: one request across services, the only signal that answers "which hop was slow." Monitoring tells you something is wrong; observability lets you ask why without shipping new code.
+TRAP: cardinality kills. A metric label containing user id or request id will bankrupt the metrics backend — that data belongs in logs or traces.
+
+MODULE 2 — Azure Monitor and KQL
+Platform metrics are automatic; logs require a diagnostic setting routed to a Log Analytics workspace. Application Insights gives request/dependency/exception telemetry plus distributed tracing. Alert rules attach to action groups (email, webhook, runbook, ITSM).
+  requests
+  | where timestamp > ago(1h)
+  | summarize total=count(), failed=countif(success==false) by name
+  | extend errorRate = round(100.0 * failed / total, 2)
+  | where total > 100
+  | order by errorRate desc
+Workspace design decides cost: retention period, daily cap, and which tables you actually query. Basic logs cost less and query less.
+
+MODULE 3 — Prometheus and Grafana on Kubernetes
+Prometheus scrapes /metrics endpoints on an interval and stores time series; exporters cover things that cannot expose their own. PromQL for querying, Alertmanager for routing and deduplication, Grafana for dashboards. Azure Monitor managed Prometheus and managed Grafana remove the operational burden if you want them.
+The four golden signals: latency, traffic, errors, saturation. The USE method for resources (utilization, saturation, errors); the RED method for services (rate, errors, duration).
+
+MODULE 4 — SLIs, SLOs, and error budgets
+SLI is the measurement (percentage of requests under 300 ms). SLO is the target (99.5% over 28 days). Error budget is the allowed failure (0.5%), and it is a decision-making tool: budget remaining means ship faster; budget exhausted means stop feature work and fix reliability. An SLA is the contractual version with money attached — always looser than your internal SLO.
+Choose SLIs from the user's perspective. Nobody outside the team cares about CPU utilization.
+
+MODULE 5 — Alerting that respects humans
+Page only on symptoms that are user-visible and need action now. Everything else is a ticket or a dashboard. Every alert needs an owner, a runbook link, and a clear "what do I do at 3 a.m." Alert fatigue is a reliability problem — an ignored page and no page are the same page.
+TRAP: alerting on cause (CPU is high) instead of symptom (requests are failing) generates noise during normal load and silence during real outages.
+
+MODULE 6 — Incident response
+Roles: incident commander (decides, does not debug), communications lead, subject matter experts. Sequence: detect → triage → mitigate → resolve → review. Mitigate before you diagnose — roll back first, understand later. Blameless postmortem asks what made the mistake easy to make, and every action item needs an owner and a date. Track MTTD and MTTR, not blame.
+
+MODULE 7 — Capacity and cost observability
+Cost is an operational signal. Tag everything, alert on budget burn as well as error budget burn, watch egress and log ingestion — the two bills that surprise people. Right-size from observed usage, not from the size someone picked at launch.
+
+GLOSSARY
+Cardinality — number of distinct label combinations in a metric series
+Golden signals — latency, traffic, errors, saturation
+Error budget — allowed unreliability implied by an SLO
+Runbook — the documented steps for handling a specific alert
+Blameless postmortem — review focused on systems and conditions, not individuals
+
+READINESS CHECK
+☐ Explain metrics vs. logs vs. traces and when each is the wrong tool
+☐ Write a KQL query computing an error rate, from scratch
+☐ Define an SLI, SLO, and error budget for one real service you have run
+☐ Justify why an alert should page rather than file a ticket
+☐ Describe an incident you would mitigate before diagnosing, and why
+☐ Name the two cloud bills that grow silently: egress and log ingestion
+''';
+
+const _capstone = '''
+CAPSTONE — PRODUCTIONIZE PURPLEQUEUE
+The portfolio piece. Every certification above is theory until one real application is containerized, provisioned by code, deployed by a pipeline, and observable in production. Use PurpleQueue rather than a tutorial app — an interviewer can tell the difference immediately.
+
+STAGE 1 — Containerize
+Write a multi-stage Dockerfile: build stage compiles, runtime stage carries only the artifact. Run as a non-root user. Add a .dockerignore. Build, tag with the commit SHA (never only latest), push to Azure Container Registry. Scan the image and fix what the scan finds.
+Checkpoint: the image runs identically on your machine and in ACR, and is under a size you can defend.
+
+STAGE 2 — Provision with Terraform
+Resource group, VNet and subnets, ACR, AKS cluster with a small node pool, Log Analytics workspace, and Key Vault. State in Azure Storage with locking enabled. Separate variables per environment. No portal clicks — if it exists and is not in Terraform, it does not count.
+Checkpoint: terraform destroy then terraform apply rebuilds the entire environment from nothing.
+
+STAGE 3 — Deploy on Kubernetes
+Helm chart with values per environment. Deployment with resource requests and limits, liveness and readiness probes, and at least two replicas. Service plus Ingress with TLS. Secrets from Key Vault via the CSI driver or workload identity — never a Secret manifest in Git.
+Checkpoint: kill a pod and watch traffic keep flowing; roll out a bad image and roll it back.
+
+STAGE 4 — CI/CD
+GitHub Actions: on pull request run lint, tests, terraform plan, and a container build. On merge to main, build and push the image, then deploy. Authenticate to Azure with OIDC workload identity federation — no stored credentials anywhere in the repo. Protect main with required checks and a review.
+Checkpoint: a merged pull request reaches production with no manual step, and a failed test stops it.
+
+STAGE 5 — Observability
+Container Insights or managed Prometheus for cluster metrics, Application Insights for app telemetry, one Grafana or Azure dashboard that answers "is it healthy" in five seconds. Define one real SLO with an error budget. One alert that pages, wired to an action group, with a runbook.
+Checkpoint: break something on purpose and let the alert find it before you do.
+
+STAGE 6 — Prove it and write it up
+Load-test until something degrades and record what failed first — saturation, a missing limit, a database connection pool. Fix one of them. Then write the README an interviewer will actually read: architecture diagram, the decisions and their tradeoffs, what you would do differently at ten times the scale, and the cost per month.
+Checkpoint: you can walk through the whole system in five minutes without opening the code.
+
+COST DISCIPLINE
+Everything above fits inside free tiers and small SKUs if you are deliberate: smallest AKS node pool, Basic ACR, free-tier Log Analytics ingestion, and terraform destroy at the end of every session. Set a budget alert on day one. Leaving an AKS cluster running overnight is the classic way to lose a month of budget to nothing.
+
+INTERVIEW ANGLES THIS UNLOCKS
+• "Walk me through a deployment" — you have a real pipeline to describe
+• "How do you handle secrets" — OIDC and Key Vault, demonstrated, not asserted
+• "How do you know it is healthy" — an SLO you defined and an alert that fired
+• "Tell me about something that broke" — the load test result, with a real fix
+• "How would you scale this" — you have measured where it bends first
+
+READINESS CHECK
+☐ Image builds reproducibly and is tagged by commit SHA
+☐ The whole environment rebuilds from terraform apply alone
+☐ A pod can die without user-visible impact
+☐ A merge reaches production with zero manual steps
+☐ One SLO, one paging alert, one runbook exist and have been tested
+☐ The README explains tradeoffs, not just commands
 ''';

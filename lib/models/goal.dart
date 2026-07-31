@@ -14,7 +14,7 @@ class Goal {
   factory Goal.fromFirestore(Map<String, dynamic> map) {
     final rawTargetDate = map['targetDate'];
     return Goal(
-      title: map['title'] as String? ?? 'Become MLOps Expert',
+      title: map['title'] as String? ?? 'Become an Azure Platform Engineer',
       targetDate: rawTargetDate is Timestamp
           ? rawTargetDate.toDate()
           : DateTime.now().add(const Duration(days: 365)),

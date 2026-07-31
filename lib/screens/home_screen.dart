@@ -69,7 +69,7 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text('Stay consistent, achieve your MLOps goal.', style: TextStyle(color: Colors.black54)),
+          const Text('Stay consistent, achieve your platform engineering goal.', style: TextStyle(color: Colors.black54)),
           const SizedBox(height: 20),
           goalAsync.when(
             data: (goal) => GoalCard(

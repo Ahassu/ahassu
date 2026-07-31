@@ -1,47 +1,150 @@
 import '../models/learning_path.dart';
 import '../models/topic.dart';
 
-/// The full Azure MLOps curriculum, fundamentals -> expert, plus Kubernetes,
-/// interview prep, and a capstone project. Seeded once into Firestore when
-/// the learningPaths collection is empty. Freely editable afterwards from
-/// the app itself.
+/// The Azure Platform Engineer curriculum, fundamentals -> expert: AZ-900,
+/// AZ-104 and AZ-400 as the Azure spine, with Linux/networking, Terraform,
+/// Docker, Kubernetes, observability and Databricks around it, finishing
+/// with interview prep and a capstone that productionizes a real app.
+///
+/// Path ids are semantic (path_az900, not path_01) so the seed can be
+/// re-synced in place without renumbering when paths are added or removed.
+/// Seeded and re-synced by FirestoreService; freely editable from the app
+/// afterwards.
 List<LearningPath> buildSeedLearningPaths() {
-  final raw = <(String, String?, List<String>)>[
+  final raw = <(String key, String title, String? examCode, List<String> topics)>[
     (
-      'AI Fundamentals (AI-901)',
-      'AI-901',
+      'az900',
+      'Azure Fundamentals (AZ-900)',
+      'AZ-900',
       [
-        'Responsible AI principles',
-        'How generative AI models work',
-        'AI workload categories (generative, agentic, text, speech, vision, extraction)',
-        'Prompts and agents in Microsoft Foundry',
-        'Text and speech implementation with Foundry',
-        'Computer vision and image generation with Foundry',
-        'Information extraction with Content Understanding',
+        'Cloud concepts: IaaS, PaaS, SaaS and the shared responsibility model',
+        'Capex vs. opex, consumption pricing, and the Azure free tier',
+        'Azure architecture: regions, availability zones, resource groups',
+        'Management groups, subscriptions, and scope inheritance',
+        'Compute: VMs, Scale Sets, App Service, Container Apps, AKS, Functions',
+        'Networking: VNets, subnets, NSGs, VPN Gateway, ExpressRoute',
+        'Storage: Blob tiers, Files, Disks, and redundancy (LRS/ZRS/GRS)',
+        'Identity: Microsoft Entra ID, RBAC, MFA, Conditional Access',
+        'Governance: Azure Policy, resource locks, tags, Cost Management',
+        'Monitoring: Azure Monitor, Log Analytics, Service Health, Advisor',
+        'AWS-to-Azure service mapping (EC2/S3/IAM/VPC and friends)',
       ],
     ),
     (
-      'Data Fundamentals (DP-900, optional)',
-      'DP-900',
-      [
-        'Core data concepts: relational vs non-relational',
-        'Relational data on Azure (SQL Database, SQL Managed Instance)',
-        'Non-relational data on Azure (Cosmos DB, Blob/Table storage)',
-        'Analytics workloads (Synapse, Data Factory, Databricks)',
-      ],
-    ),
-    (
-      'Python & Data Science Foundations',
+      'linux',
+      'Linux, Networking & Git Foundations',
       null,
       [
-        'Python programming essentials',
-        'NumPy and Pandas for data wrangling',
-        'Statistics and probability for ML',
-        'Data visualization (Matplotlib/Seaborn)',
-        'SQL for data analysis',
+        'Linux filesystem layout, permissions, and ownership',
+        'Process management and systemd units',
+        'Shell scripting and text processing (grep, sed, awk, jq)',
+        'SSH, key management, and remote troubleshooting',
+        'TCP/IP, CIDR, and subnetting by hand',
+        'The DNS resolution path and the records that matter',
+        'TLS handshake, certificates, and expiry troubleshooting',
+        'Git branching, rebase vs. merge, and the pull-request workflow',
       ],
     ),
     (
+      'az104',
+      'Azure Administrator Associate (AZ-104)',
+      'AZ-104',
+      [
+        'Entra ID: users, groups, administrative units, and role assignment',
+        'RBAC scope inheritance and custom role definitions',
+        'Governance: management groups, Azure Policy, tags, cost controls',
+        'Storage accounts: redundancy, lifecycle rules, SAS, private endpoints',
+        'Azure Files and blob access tiers in practice',
+        'VMs: sizing, availability sets vs. zones, Scale Sets, images',
+        'App Service and Container Instances/Apps for PaaS workloads',
+        'AKS basics: cluster creation, node pools, and scaling',
+        'Virtual networking: VNets, subnets, NSGs, peering, private DNS',
+        'Load balancing: Load Balancer vs. Application Gateway vs. Front Door',
+        'Hybrid connectivity: VPN Gateway and ExpressRoute',
+        'Backup, restore, and Azure Site Recovery',
+        'Monitoring: Azure Monitor, Log Analytics, KQL, alert rules',
+        'Deployment: Azure CLI, PowerShell, ARM templates and Bicep',
+      ],
+    ),
+    (
+      'terraform',
+      'Infrastructure as Code (Terraform Associate 003)',
+      'TF-003',
+      [
+        'IaC concepts: declarative vs. imperative, drift, idempotency',
+        'The core workflow: init, plan, apply, destroy',
+        'HCL: providers, resources, data sources, variables, locals, outputs',
+        'State: remote backends, locking, and keeping secrets out of it',
+        'Modules: authoring, versioning, and consuming from the registry',
+        'Resource lifecycle: depends_on, count, for_each, import, moved',
+        'Provisioners and why they are the last resort',
+        'HCP Terraform workflows: workspaces, runs, and policy checks',
+        'The azurerm provider: authentication and subscription targeting',
+        'Terraform in CI: fmt, validate, tflint, and plan as a PR gate',
+      ],
+    ),
+    (
+      'docker',
+      'Docker & Containerization',
+      null,
+      [
+        'Docker fundamentals: images, layers, containers, volumes',
+        'Writing Dockerfiles for application services',
+        'Container registries (ACR, Docker Hub) and image scanning',
+        'Multi-stage builds and image slimming',
+        'Docker Compose for local multi-service stacks',
+        'Container security: non-root users, minimal base images, SBOMs',
+      ],
+    ),
+    (
+      'cka',
+      'Kubernetes Administrator (CKA)',
+      'CKA',
+      [
+        'Kubernetes architecture: control plane and nodes',
+        'Pods, Deployments, Services',
+        'ConfigMaps and Secrets',
+        'Networking and Ingress',
+        'Storage: PersistentVolumes and PVCs',
+        'RBAC and cluster security',
+        'Helm charts',
+        'Azure Kubernetes Service (AKS)',
+        'Troubleshooting: CrashLoopBackOff, ImagePullBackOff, Pending pods',
+      ],
+    ),
+    (
+      'az400',
+      'CI/CD & Platform Delivery (AZ-400)',
+      'AZ-400',
+      [
+        'Azure DevOps and GitHub Actions pipelines',
+        'Multi-stage YAML: build, test, deploy',
+        'Source control strategy and branch protection',
+        'Infrastructure as Code inside the pipeline (Bicep/Terraform)',
+        'Secrets: Key Vault and workload identity federation (OIDC)',
+        'Deployment strategies: blue-green, canary, ring, feature flags',
+        'Release gates, approvals, and environments',
+        'Artifact and package management',
+        'Security scanning: dependency, code, secret, container',
+        'Instrumentation: Application Insights and KQL',
+      ],
+    ),
+    (
+      'observability',
+      'Observability & SRE Practices',
+      null,
+      [
+        'The three signals: metrics, logs, and traces',
+        'Azure Monitor, Log Analytics workspaces, and writing KQL',
+        'Prometheus and Grafana on Kubernetes',
+        'SLIs, SLOs, and error budgets',
+        'Alerting that pages a human vs. alerting that files a ticket',
+        'Incident response, on-call, and blameless postmortems',
+        'Capacity planning and cost observability',
+      ],
+    ),
+    (
+      'databricks',
       'Databricks & SQL (Data Engineer Associate)',
       'DEA',
       [
@@ -57,143 +160,46 @@ List<LearningPath> buildSeedLearningPaths() {
       ],
     ),
     (
-      'Core Machine Learning',
+      'interview',
+      'Interview Preparation — Platform Engineer',
       null,
       [
-        'Supervised learning: regression and classification',
-        'Unsupervised learning: clustering and dimensionality reduction',
-        'Model evaluation and metrics',
-        'Feature engineering',
-        'Deep learning fundamentals (CNN, RNN, Transformers)',
-        'Scikit-learn, TensorFlow and PyTorch basics',
+        'Platform system design: landing zones, subscriptions, multi-tenancy',
+        'Translating AWS experience into Azure equivalents out loud',
+        'Terraform deep-dives: state, modules, drift, blast radius',
+        'Kubernetes deep-dives: scheduling, networking, failure modes',
+        'Troubleshooting scenarios: "the deploy is broken, walk me through it"',
+        'Behavioral / STAR stories, including the career-break narrative',
+        'Speak for 2–5 minutes on any core concept, unprepared',
       ],
     ),
     (
-      'MLOps Engineer Associate (AI-300)',
-      'AI-300',
-      [
-        'MLOps infrastructure as code (Bicep, GitHub Actions)',
-        'Experiment tracking with MLflow',
-        'Training pipelines and hyperparameter tuning',
-        'Model registration and versioning',
-        'Real-time and batch endpoint deployment',
-        'Data drift detection and retraining triggers',
-        'GenAIOps infrastructure with Microsoft Foundry',
-        'Prompt versioning and source control',
-        'GenAI quality metrics and observability',
-        'RAG tuning and fine-tuning',
-      ],
-    ),
-    (
-      'Docker & Containerization',
+      'capstone',
+      'Capstone: Productionize PurpleQueue',
       null,
       [
-        'Docker fundamentals: images, containers, volumes',
-        'Writing Dockerfiles for ML model serving',
-        'Container registries (ACR, Docker Hub)',
-        'Multi-stage builds for lean ML images',
-      ],
-    ),
-    (
-      'Kubernetes Fundamentals (CKA path)',
-      'CKA',
-      [
-        'Kubernetes architecture: control plane and nodes',
-        'Pods, Deployments, Services',
-        'ConfigMaps and Secrets',
-        'Networking and Ingress',
-        'Storage: PersistentVolumes and PVCs',
-        'RBAC and cluster security',
-        'Helm charts',
-        'Azure Kubernetes Service (AKS)',
-      ],
-    ),
-    (
-      'Kubernetes for ML Workloads',
-      null,
-      [
-        'Kubeflow pipelines',
-        'Model serving with KServe / Seldon',
-        'GPU scheduling in Kubernetes',
-        'Autoscaling inference workloads (HPA, KEDA)',
-      ],
-    ),
-    (
-      'CI/CD & DevOps (AZ-400)',
-      'AZ-400',
-      [
-        'Azure DevOps and GitHub Actions pipelines',
-        'CI/CD stages for ML: validate data, train, test, deploy',
-        'Infrastructure as Code (Bicep/Terraform)',
-        'Release management and approvals',
-        'Artifact management',
-      ],
-    ),
-    (
-      'MLOps on Azure (Expert)',
-      null,
-      [
-        'MLOps maturity model',
-        'End-to-end CI/CD/CT pipelines',
-        'Model monitoring and data drift detection',
-        'Feature stores',
-        'Model governance and lineage',
-        'A/B testing and canary deployments',
-        'Cost optimization for ML workloads',
-        'MLflow integration',
-      ],
-    ),
-    (
-      'Azure AI App and Agent Developer (AI-103, optional)',
-      'AI-103',
-      [
-        'Choosing and deploying Foundry models',
-        'Building generative AI apps with RAG',
-        'Building and orchestrating multi-agent solutions',
-        'Computer vision: image/video generation and editing',
-        'Text analysis and speech in Foundry',
-        'Information extraction with Content Understanding',
-        'Responsible AI and agent governance',
-      ],
-    ),
-    (
-      'Interview Preparation',
-      null,
-      [
-        'ML system design case studies',
-        'Coding rounds: Python, SQL, algorithms',
-        'ML theory deep-dives (bias-variance, regularization, etc.)',
-        'Behavioral / STAR stories',
-        'Mock interview: whiteboard an MLOps pipeline end to end',
-      ],
-    ),
-    (
-      'Capstone: End-to-End MLOps Project',
-      null,
-      [
-        'Frame the problem and collect data',
-        'Prototype the model in a notebook',
-        'Wrap training in a DP-100 pipeline',
-        'Containerize with Docker',
-        'Deploy to AKS',
-        'Set up CI/CD with an AZ-400 pipeline',
-        'Add monitoring and alerting',
-        'Write up the project as a portfolio piece',
+        'Containerize the app and push images to ACR',
+        'Provision the Azure footprint with Terraform',
+        'Deploy to AKS with a Helm chart',
+        'Wire CI/CD in GitHub Actions using OIDC, no stored secrets',
+        'Add monitoring, alerting, and one real SLO',
+        'Load-test it and document what broke first',
+        'Write the architecture up as a portfolio piece',
       ],
     ),
   ];
 
   var order = 0;
   return raw.map((entry) {
-    final (title, examCode, topicTitles) = entry;
+    final (key, title, examCode, topicTitles) = entry;
     order += 1;
     return LearningPath(
-      id: 'path_${order.toString().padLeft(2, '0')}',
+      id: 'path_$key',
       order: order,
       title: title,
       examCode: examCode,
       topics: topicTitles.asMap().entries.map((e) {
-        return Topic(id: 'topic_${order}_${e.key}', title: e.value);
+        return Topic(id: 'topic_${key}_${e.key}', title: e.value);
       }).toList(),
     );
   }).toList();

@@ -62,7 +62,7 @@ class TopicsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 4),
-            const Text('Your full Azure MLOps curriculum, fundamentals to expert.',
+            const Text('Your full Azure Platform Engineer curriculum, fundamentals to expert.',
                 style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 16),
             Expanded(
