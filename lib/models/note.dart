@@ -4,8 +4,6 @@ class Note {
   final String id;
   final String title;
   final String body;
-  final String? learningPathId;
-  final String? learningPathTitle;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,8 +11,6 @@ class Note {
     required this.id,
     required this.title,
     required this.body,
-    this.learningPathId,
-    this.learningPathTitle,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -26,8 +22,6 @@ class Note {
       id: id,
       title: map['title'] as String? ?? '',
       body: map['body'] as String? ?? '',
-      learningPathId: map['learningPathId'] as String?,
-      learningPathTitle: map['learningPathTitle'] as String?,
       createdAt: createdAt is Timestamp ? createdAt.toDate() : DateTime.now(),
       updatedAt: updatedAt is Timestamp ? updatedAt.toDate() : DateTime.now(),
     );
@@ -37,8 +31,6 @@ class Note {
     return {
       'title': title,
       'body': body,
-      'learningPathId': learningPathId,
-      'learningPathTitle': learningPathTitle,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };

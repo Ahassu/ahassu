@@ -1,98 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/goal.dart';
-import '../models/learning_path.dart';
 import '../models/note.dart';
-import '../models/quiz_question.dart';
-import '../models/roadmap.dart';
-import '../models/study_session.dart';
+import '../models/study_area.dart';
 import '../services/firestore_service.dart';
 
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService(FirebaseFirestore.instance);
 });
 
-final learningPathsProvider = StreamProvider<List<LearningPath>>((ref) {
-  return ref.watch(firestoreServiceProvider).watchLearningPaths();
+final studyAreasProvider = StreamProvider<List<StudyArea>>((ref) {
+  return ref.watch(firestoreServiceProvider).watchStudyAreas();
 });
 
 final notesProvider = StreamProvider<List<Note>>((ref) {
   return ref.watch(firestoreServiceProvider).watchNotes();
 });
 
-final studySessionsProvider = StreamProvider<List<StudySession>>((ref) {
-  return ref.watch(firestoreServiceProvider).watchStudySessions();
-});
-
-final goalProvider = StreamProvider<Goal>((ref) {
-  return ref.watch(firestoreServiceProvider).watchGoal();
-});
-
-final quizQuestionsProvider = StreamProvider<List<QuizQuestion>>((ref) {
-  return ref.watch(firestoreServiceProvider).watchQuizQuestions();
-});
-
-final roadmapsProvider = StreamProvider<List<RoadmapPlan>>((ref) {
-  return ref.watch(firestoreServiceProvider).watchRoadmaps();
-});
-
-class ProgressStats {
-  final int doneTopics;
-  final int totalTopics;
-  double get fraction => totalTopics == 0 ? 0 : doneTopics / totalTopics;
-  int get percent => (fraction * 100).round();
-
-  const ProgressStats({required this.doneTopics, required this.totalTopics});
-}
-
-final overallProgressProvider = Provider<ProgressStats>((ref) {
-  final paths = ref.watch(learningPathsProvider).value ?? [];
-  final done = paths.fold<int>(0, (acc, p) => acc + p.doneCount);
-  final total = paths.fold<int>(0, (acc, p) => acc + p.totalCount);
-  return ProgressStats(doneTopics: done, totalTopics: total);
-});
-
-bool _isSameDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
-
-class CertificationStats {
-  final int passed;
+/// Readiness across the whole plan — the number on the Plan screen header.
+class Readiness {
+  final int done;
   final int total;
 
-  const CertificationStats({required this.passed, required this.total});
+  const Readiness({required this.done, required this.total});
+
+  double get fraction => total == 0 ? 0 : done / total;
+  int get percent => (fraction * 100).round();
+  int get remaining => total - done;
 }
 
-final certificationStatsProvider = Provider<CertificationStats>((ref) {
-  final paths = ref.watch(learningPathsProvider).value ?? [];
-  final certifiable = paths.where((p) => p.examCode != null);
-  final passed = certifiable.where((p) => p.certStatus == CertStatus.passed).length;
-  return CertificationStats(passed: passed, total: certifiable.length);
+final readinessProvider = Provider<Readiness>((ref) {
+  final areas = ref.watch(studyAreasProvider).value ?? [];
+  return Readiness(
+    done: areas.fold<int>(0, (acc, a) => acc + a.doneCount),
+    total: areas.fold<int>(0, (acc, a) => acc + a.totalCount),
+  );
 });
 
-final todayMinutesProvider = Provider<int>((ref) {
-  final sessions = ref.watch(studySessionsProvider).value ?? [];
-  final today = DateTime.now();
-  return sessions
-      .where((s) => _isSameDay(s.date, today))
-      .fold<int>(0, (acc, s) => acc + s.minutes);
+/// Readiness limited to the areas the posting leans on hardest. Prep time
+/// should follow this number rather than the overall one — finishing the
+/// support areas while Terraform is untouched is not progress.
+final criticalReadinessProvider = Provider<Readiness>((ref) {
+  final areas = (ref.watch(studyAreasProvider).value ?? [])
+      .where((a) => a.weight == AreaWeight.critical);
+  return Readiness(
+    done: areas.fold<int>(0, (acc, a) => acc + a.doneCount),
+    total: areas.fold<int>(0, (acc, a) => acc + a.totalCount),
+  );
 });
 
-final totalMinutesProvider = Provider<int>((ref) {
-  final sessions = ref.watch(studySessionsProvider).value ?? [];
-  return sessions.fold<int>(0, (acc, s) => acc + s.minutes);
-});
-
-final todayCompletedTopicsProvider = Provider<int>((ref) {
-  final paths = ref.watch(learningPathsProvider).value ?? [];
-  final today = DateTime.now();
-  var count = 0;
-  for (final path in paths) {
-    for (final topic in path.topics) {
-      if (topic.done && topic.completedAt != null && _isSameDay(topic.completedAt!, today)) {
-        count += 1;
-      }
+/// The next unfinished subtopic, weightiest area first — powers "what should
+/// I study now" so opening the app never needs a decision.
+final nextUpProvider = Provider<(StudyArea, StudySubtopic)?>((ref) {
+  final areas = ref.watch(studyAreasProvider).value ?? [];
+  for (final area in areas) {
+    for (final sub in area.subtopics) {
+      if (!sub.done) return (area, sub);
     }
   }
-  return count;
+  return null;
 });

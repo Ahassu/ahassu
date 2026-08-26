@@ -4,26 +4,33 @@ rules_version = '2';
 // Access is scoped to only the collections Ahassu uses, not project-wide.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /learningPaths/{docId} {
+    // The interview study plan: one document per topic area.
+    match /studyAreas/{docId} {
       allow read, write: if true;
     }
     match /notes/{docId} {
       allow read, write: if true;
     }
-    match /studySessions/{docId} {
+    // Seed bookkeeping (meta/seed holds the applied seed version).
+    match /meta/{docId} {
       allow read, write: if true;
     }
-    match /quizQuestions/{docId} {
-      allow read, write: if true;
-    }
-    match /goal/{docId} {
+    // Retired by seed version 3 (the certification tracker). Writes stay open
+    // only so the one-time cleanup can delete what is still there; remove
+    // these blocks once the cleanup has run on every device.
+    match /learningPaths/{docId} {
       allow read, write: if true;
     }
     match /roadmaps/{docId} {
       allow read, write: if true;
     }
-    // Seed bookkeeping (meta/seed holds the applied seed version).
-    match /meta/{docId} {
+    match /quizQuestions/{docId} {
+      allow read, write: if true;
+    }
+    match /studySessions/{docId} {
+      allow read, write: if true;
+    }
+    match /goal/{docId} {
       allow read, write: if true;
     }
   }

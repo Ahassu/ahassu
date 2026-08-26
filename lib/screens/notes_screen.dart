@@ -7,10 +7,7 @@ import '../theme.dart';
 import 'note_editor_screen.dart';
 
 class NotesScreen extends ConsumerStatefulWidget {
-  final String? filterPathId;
-  final String? filterPathTitle;
-
-  const NotesScreen({super.key, this.filterPathId, this.filterPathTitle});
+  const NotesScreen({super.key});
 
   @override
   ConsumerState<NotesScreen> createState() => _NotesScreenState();
@@ -22,40 +19,34 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   @override
   Widget build(BuildContext context) {
     final notesAsync = ref.watch(notesProvider);
-    final isFiltered = widget.filterPathId != null;
 
     return Scaffold(
-      appBar: isFiltered
-          ? AppBar(title: Text('Notes · ${widget.filterPathTitle}'))
-          : null,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!isFiltered) ...[
-                const Text('Notes', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search notes...',
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-                  ),
-                  onChanged: (v) => setState(() => _query = v.toLowerCase()),
+              const Text('My Notes', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 2),
+              const Text('Your own wording, once the scripted answer is yours.',
+                  style: TextStyle(fontSize: 13.5, color: Colors.black54)),
+              const SizedBox(height: 12),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search notes...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                 ),
-                const SizedBox(height: 12),
-              ],
+                onChanged: (v) => setState(() => _query = v.toLowerCase()),
+              ),
+              const SizedBox(height: 12),
               Expanded(
                 child: notesAsync.when(
                   data: (notes) {
                     var filtered = notes;
-                    if (isFiltered) {
-                      filtered = filtered.where((n) => n.learningPathId == widget.filterPathId).toList();
-                    }
                     if (_query.isNotEmpty) {
                       filtered = filtered
                           .where((n) => n.title.toLowerCase().contains(_query) || n.body.toLowerCase().contains(_query))
@@ -109,10 +100,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => NoteEditorScreen(
-              prefillPathId: widget.filterPathId,
-              prefillPathTitle: widget.filterPathTitle,
-            ),
+            builder: (_) => const NoteEditorScreen(),
           ),
         ),
         child: const Icon(Icons.add),

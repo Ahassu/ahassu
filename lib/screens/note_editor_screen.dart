@@ -7,10 +7,8 @@ import '../providers/providers.dart';
 
 class NoteEditorScreen extends ConsumerStatefulWidget {
   final Note? existing;
-  final String? prefillPathId;
-  final String? prefillPathTitle;
 
-  const NoteEditorScreen({super.key, this.existing, this.prefillPathId, this.prefillPathTitle});
+  const NoteEditorScreen({super.key, this.existing});
 
   @override
   ConsumerState<NoteEditorScreen> createState() => _NoteEditorScreenState();
@@ -44,18 +42,15 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
       id: widget.existing?.id ?? 'note_${const Uuid().v4()}',
       title: _title.text.trim().isEmpty ? 'Untitled note' : _title.text.trim(),
       body: _body.text.trim(),
-      learningPathId: widget.existing?.learningPathId ?? widget.prefillPathId,
-      learningPathTitle: widget.existing?.learningPathTitle ?? widget.prefillPathTitle,
       createdAt: widget.existing?.createdAt ?? now,
       updatedAt: now,
     );
     await ref.read(firestoreServiceProvider).upsertNote(note);
-    if (context.mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    final pathTitle = widget.existing?.learningPathTitle ?? widget.prefillPathTitle;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.existing == null ? 'New Note' : 'Edit Note'),
@@ -68,11 +63,6 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (pathTitle != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Chip(label: Text(pathTitle)),
-              ),
             TextField(
               controller: _title,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -85,7 +75,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 maxLines: null,
                 expands: true,
                 textAlignVertical: TextAlignVertical.top,
-                decoration: const InputDecoration(hintText: 'Write what you studied...', border: InputBorder.none),
+                decoration: const InputDecoration(hintText: 'Write your own answer, or what you want to remember...', border: InputBorder.none),
               ),
             ),
           ],
