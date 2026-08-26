@@ -67,6 +67,17 @@ const _plan = <_Area>[
     AreaWeight.critical,
     [
       (
+        'my-intro',
+        'Your intro, in your own words',
+        'The same opening question, answered from your own history: TJX on Azure, then Intuit on AWS.',
+        [
+          (
+            'Tell me about yourself. (Your own words, cleaned up.)',
+            'I have about eight years in IT, almost all of it cloud and platform engineering. My most recent role was at TJX, on Azure. That was platform work rather than application work — governance across a large number of subscriptions, with access running through Microsoft Entra ID, role assignments scoped through security groups at the management group, subscription or resource group level, and privileged production access through PIM with just-in-time elevation. I built reusable Terraform modules with isolated remote state to provision that infrastructure across non-prod and prod, ran container workloads on AKS, and supported the data platform side, provisioning Databricks clusters and SQL warehouses and managing Unity Catalog access for the data engineering teams. Before TJX I was at Intuit, which was heavily AWS. The bulk of my contribution there was building continuous integration pipelines, and breaking monolithic, legacy applications down into components, containerizing them, and hosting them on the cloud platform. We worked a lot with Chef and were moving toward immutable infrastructure, so AMI creation and configuration were automated with HashiCorp Packer. For service scheduling, routing and discovery we used container orchestration, and we leaned heavily on EKS. We drove the Terraform runs from Jenkins using string and boolean parameters, so you picked the environment and it ran the right deployment. We had started on CloudFormation and moved to Terraform because we wanted a cloud-agnostic provisioning tool.',
+          ),
+        ],
+      ),
+      (
         'tell-me',
         'Tell me about yourself',
         'The opening question. Ninety seconds, rehearsed until it is boring to you.',

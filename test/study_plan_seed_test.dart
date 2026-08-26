@@ -11,7 +11,7 @@ void main() {
 
   test('the plan opens on introducing yourself', () {
     expect(plan.first.id, 'intro');
-    expect(plan.first.subtopics.first.id, 'intro.tell-me');
+    expect(plan.first.subtopics.first.id, 'intro.my-intro');
   });
 
   test('subtopic ids are unique across the whole plan', () {
