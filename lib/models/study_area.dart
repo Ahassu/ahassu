@@ -1,6 +1,15 @@
 /// One interview question inside a subtopic: the question as an interviewer
 /// asks it, and the answer to say back.
+///
+/// Cards are editable, so each carries enough state to survive a seed sync.
+/// A seeded card keeps its content from the seed until the user edits it;
+/// after that [edited] pins the user's wording and the seed stops overwriting
+/// it. Deleting a seeded card sets [deleted] rather than removing it, because
+/// the next sync would otherwise put it straight back.
 class StudyCard {
+  /// Stable. Seeded cards use `subtopicId#index`; cards the user adds get a
+  /// uuid, which is also how the two are told apart.
+  final String id;
   final String question;
 
   /// The spoken answer. First person, role-specific, ready to rehearse out
@@ -8,16 +17,55 @@ class StudyCard {
   /// written the way someone talks rather than the way a doc reads.
   final String answer;
 
-  const StudyCard({required this.question, required this.answer});
+  /// The user rewrote this card. The seed no longer overwrites it.
+  final bool edited;
 
-  factory StudyCard.fromMap(Map<String, dynamic> map) {
+  /// Hidden from the app, kept in the document as a tombstone.
+  final bool deleted;
+
+  const StudyCard({
+    required this.id,
+    required this.question,
+    required this.answer,
+    this.edited = false,
+    this.deleted = false,
+  });
+
+  /// True for a card the user created rather than one that came from the seed.
+  bool get isCustom => !id.contains('#');
+
+  StudyCard copyWith({
+    String? question,
+    String? answer,
+    bool? edited,
+    bool? deleted,
+  }) {
     return StudyCard(
-      question: map['question'] as String? ?? '',
-      answer: map['answer'] as String? ?? '',
+      id: id,
+      question: question ?? this.question,
+      answer: answer ?? this.answer,
+      edited: edited ?? this.edited,
+      deleted: deleted ?? this.deleted,
     );
   }
 
-  Map<String, dynamic> toMap() => {'question': question, 'answer': answer};
+  factory StudyCard.fromMap(Map<String, dynamic> map) {
+    return StudyCard(
+      id: map['id'] as String? ?? '',
+      question: map['question'] as String? ?? '',
+      answer: map['answer'] as String? ?? '',
+      edited: map['edited'] as bool? ?? false,
+      deleted: map['deleted'] as bool? ?? false,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'question': question,
+    'answer': answer,
+    'edited': edited,
+    'deleted': deleted,
+  };
 }
 
 /// The study plan is a flat list of areas, each holding the subtopics that
@@ -32,8 +80,7 @@ class StudySubtopic {
   /// What this subtopic is, in one line, for the collapsed list row.
   final String summary;
 
-  /// The question cards. Usually one; more where an interviewer is likely to
-  /// come at the same subtopic from two directions.
+  /// Every card, tombstones included. Use [visibleCards] for display.
   final List<StudyCard> cards;
   final bool done;
   final DateTime? completedAt;
@@ -47,16 +94,20 @@ class StudySubtopic {
     this.completedAt,
   });
 
+  /// What the app shows: everything the user has not deleted.
+  List<StudyCard> get visibleCards => cards.where((c) => !c.deleted).toList();
+
   StudySubtopic copyWith({
     bool? done,
     DateTime? completedAt,
     bool clearCompletedAt = false,
+    List<StudyCard>? cards,
   }) {
     return StudySubtopic(
       id: id,
       title: title,
       summary: summary,
-      cards: cards,
+      cards: cards ?? this.cards,
       done: done ?? this.done,
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
     );
@@ -122,7 +173,8 @@ class StudyArea {
 
   int get doneCount => subtopics.where((s) => s.done).length;
   int get totalCount => subtopics.length;
-  int get cardCount => subtopics.fold<int>(0, (a, s) => a + s.cards.length);
+  int get cardCount =>
+      subtopics.fold<int>(0, (a, s) => a + s.visibleCards.length);
   double get fraction => totalCount == 0 ? 0 : doneCount / totalCount;
   int get percent => (fraction * 100).round();
 

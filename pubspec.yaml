@@ -39,7 +39,9 @@ dependencies:
   flutter_riverpod: ^3.3.2
   intl: ^0.20.3
   uuid: ^4.6.0
-  fl_chart: ^1.2.0
+  # Dictation into the question and answer fields. Uses the browser's Web
+  # Speech API on web, and the platform recogniser on mobile.
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:
