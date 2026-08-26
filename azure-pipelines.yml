@@ -1,0 +1,162 @@
+# Ahassu — CI/CD on Azure Pipelines
+#
+# Verify stage runs on every push and PR to master: analyze, test, build web.
+# Deploy stage runs only on master, and only if Verify passed.
+#
+# Agent pool: see the `pool:` block below. Defaults to a self-hosted agent
+# because new Azure DevOps orgs get zero Microsoft-hosted parallel jobs until
+# the free grant is approved. See azure/PIPELINE.md.
+
+trigger:
+  branches:
+    include:
+      - master
+
+pr:
+  branches:
+    include:
+      - master
+
+variables:
+  # Pinned deliberately: matches the Flutter version this app is developed on.
+  # Bump it here and the agent picks up the new SDK on the next run.
+  flutterVersion: '3.38.9'
+  flutterHome: '$(Agent.ToolsDirectory)/flutter/$(flutterVersion)'
+  # Firebase project to deploy to (from firebase.json).
+  firebaseProject: 'ahassu'
+
+pool:
+  # Self-hosted agent on your Mac — free, unlimited minutes, no grant needed.
+  name: 'Default'
+  # Once the free parallelism grant is approved, delete the two lines above
+  # and uncomment this to run on Microsoft-hosted Linux instead:
+  # vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: Verify
+    displayName: Analyze, test, build
+    jobs:
+      - job: verify
+        displayName: Verify web build
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          # Cache the Flutter SDK between runs. Keyed on the version string, so
+          # bumping flutterVersion cleanly misses the cache and re-downloads.
+          - task: Cache@2
+            displayName: Cache Flutter SDK
+            inputs:
+              key: 'flutter | "$(Agent.OS)" | $(flutterVersion)'
+              path: '$(flutterHome)'
+              cacheHitVar: FLUTTER_CACHED
+
+          - script: |
+              set -euo pipefail
+              if [ ! -x "$(flutterHome)/bin/flutter" ]; then
+                echo "Installing Flutter $(flutterVersion)"
+                rm -rf "$(flutterHome)"
+                git clone --depth 1 --branch "$(flutterVersion)" \
+                  https://github.com/flutter/flutter.git "$(flutterHome)"
+              else
+                echo "Flutter $(flutterVersion) restored from cache"
+              fi
+              echo "##vso[task.prependpath]$(flutterHome)/bin"
+            displayName: Install Flutter
+
+          - script: |
+              set -euo pipefail
+              flutter --version
+              flutter config --no-analytics
+              flutter precache --web
+            displayName: Configure Flutter
+
+          - script: flutter pub get
+            displayName: flutter pub get
+
+          # Fails the build on any analyzer error. Warnings/infos do not fail
+          # unless analysis_options.yaml promotes them.
+          - script: flutter analyze
+            displayName: flutter analyze
+
+          # --machine emits newline-delimited JSON, which tojunit converts into
+          # a JUnit XML file that Azure Pipelines can render in the Tests tab.
+          # `set -o pipefail` keeps the real exit code from `flutter test` rather
+          # than the exit code of the converter at the end of the pipe.
+          - script: |
+              set -euo pipefail
+              dart pub global activate junitreport
+              export PATH="$PATH:$HOME/.pub-cache/bin"
+              mkdir -p build/reports
+              flutter test --machine | tojunit --output build/reports/junit.xml
+            displayName: flutter test
+            continueOnError: false
+
+          - task: PublishTestResults@2
+            displayName: Publish test results
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'build/reports/junit.xml'
+              testRunTitle: 'Ahassu unit + widget tests'
+              failTaskOnFailedTests: true
+
+          - script: flutter build web --release
+            displayName: flutter build web --release
+
+          # Hand the built site to the Deploy stage. Stages run in separate jobs
+          # and do not share a filesystem, so this artifact is the handoff.
+          - publish: build/web
+            artifact: web
+            displayName: Publish web artifact
+
+  - stage: Deploy
+    displayName: Deploy to Firebase Hosting
+    dependsOn: Verify
+    # Never deploy from a PR build, and never deploy a red build.
+    condition: >-
+      and(succeeded(),
+          eq(variables['Build.SourceBranch'], 'refs/heads/master'),
+          ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - deployment: firebase
+        displayName: Firebase Hosting
+        # Create this environment in Azure DevOps to add manual approval gates.
+        environment: 'ahassu-production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: web
+                  displayName: Download web artifact
+
+                - task: NodeTool@0
+                  displayName: Use Node 20
+                  inputs:
+                    versionSpec: '20.x'
+
+                - script: npm install -g firebase-tools
+                  displayName: Install firebase-tools
+
+                # GOOGLE_APPLICATION_CREDENTIALS points at a service account key
+                # file. Google deprecated `firebase login:ci` tokens, so this is
+                # the supported path. See azure/PIPELINE.md for creating the key.
+                - script: |
+                    set -euo pipefail
+                    echo "$FIREBASE_SERVICE_ACCOUNT" > "$(Agent.TempDirectory)/sa.json"
+                    export GOOGLE_APPLICATION_CREDENTIALS="$(Agent.TempDirectory)/sa.json"
+                    cp -r "$(Pipeline.Workspace)/web" "$(Build.SourcesDirectory)/build/web"
+                    firebase deploy \
+                      --only hosting \
+                      --project "$(firebaseProject)" \
+                      --non-interactive
+                  displayName: firebase deploy --only hosting
+                  env:
+                    # Secret variables are not auto-mapped into the environment;
+                    # this mapping is required for the value to be available.
+                    FIREBASE_SERVICE_ACCOUNT: $(FIREBASE_SERVICE_ACCOUNT)
+
+                - script: rm -f "$(Agent.TempDirectory)/sa.json"
+                  displayName: Remove service account key
+                  condition: always()
