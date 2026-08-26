@@ -1,49 +1,23 @@
-/// One interview question inside a subtopic, in the shape the cards use:
-/// the question, a structured breakdown, the sentence to actually say, and a
-/// short hook to hang it on.
+/// One interview question inside a subtopic: the question as an interviewer
+/// asks it, and the answer to say back.
 class StudyCard {
   final String question;
 
-  /// The breakdown, rendered as a two-column table — term on the left, what
-  /// it means or when you would use it on the right. Kept as pairs rather
-  /// than prose because that is what is recallable under pressure.
-  final List<(String, String)> points;
-
   /// The spoken answer. First person, role-specific, ready to rehearse out
-  /// loud — this is the part that builds fluency, and it is deliberately
+  /// loud — this is the whole point of the card, and it is deliberately
   /// written the way someone talks rather than the way a doc reads.
-  final String bestAnswer;
+  final String answer;
 
-  /// A one-line memory hook. Short enough to recall in the two seconds
-  /// between hearing the question and starting to answer.
-  final String hint;
-
-  const StudyCard({
-    required this.question,
-    required this.points,
-    required this.bestAnswer,
-    required this.hint,
-  });
+  const StudyCard({required this.question, required this.answer});
 
   factory StudyCard.fromMap(Map<String, dynamic> map) {
-    final raw = map['points'] as List<dynamic>? ?? const [];
     return StudyCard(
       question: map['question'] as String? ?? '',
-      points: raw.map((e) {
-        final m = Map<String, dynamic>.from(e as Map);
-        return (m['k'] as String? ?? '', m['v'] as String? ?? '');
-      }).toList(),
-      bestAnswer: map['bestAnswer'] as String? ?? '',
-      hint: map['hint'] as String? ?? '',
+      answer: map['answer'] as String? ?? '',
     );
   }
 
-  Map<String, dynamic> toMap() => {
-        'question': question,
-        'points': points.map((p) => {'k': p.$1, 'v': p.$2}).toList(),
-        'bestAnswer': bestAnswer,
-        'hint': hint,
-      };
+  Map<String, dynamic> toMap() => {'question': question, 'answer': answer};
 }
 
 /// The study plan is a flat list of areas, each holding the subtopics that
@@ -73,7 +47,11 @@ class StudySubtopic {
     this.completedAt,
   });
 
-  StudySubtopic copyWith({bool? done, DateTime? completedAt, bool clearCompletedAt = false}) {
+  StudySubtopic copyWith({
+    bool? done,
+    DateTime? completedAt,
+    bool clearCompletedAt = false,
+  }) {
     return StudySubtopic(
       id: id,
       title: title,
@@ -95,18 +73,20 @@ class StudySubtopic {
           .map((e) => StudyCard.fromMap(Map<String, dynamic>.from(e as Map)))
           .toList(),
       done: map['done'] as bool? ?? false,
-      completedAt: completedAt is String ? DateTime.tryParse(completedAt) : null,
+      completedAt: completedAt is String
+          ? DateTime.tryParse(completedAt)
+          : null,
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'title': title,
-        'summary': summary,
-        'cards': cards.map((c) => c.toMap()).toList(),
-        'done': done,
-        'completedAt': completedAt?.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'summary': summary,
+    'cards': cards.map((c) => c.toMap()).toList(),
+    'done': done,
+    'completedAt': completedAt?.toIso8601String(),
+  };
 }
 
 /// How hard the job description leans on an area. Drives ordering and the
@@ -115,10 +95,10 @@ enum AreaWeight { critical, high, support }
 
 extension AreaWeightLabel on AreaWeight {
   String get label => switch (this) {
-        AreaWeight.critical => 'Critical',
-        AreaWeight.high => 'High',
-        AreaWeight.support => 'Support',
-      };
+    AreaWeight.critical => 'Critical',
+    AreaWeight.high => 'High',
+    AreaWeight.support => 'Support',
+  };
 }
 
 class StudyArea {
@@ -147,13 +127,13 @@ class StudyArea {
   int get percent => (fraction * 100).round();
 
   StudyArea copyWith({List<StudySubtopic>? subtopics}) => StudyArea(
-        id: id,
-        title: title,
-        focus: focus,
-        weight: weight,
-        order: order,
-        subtopics: subtopics ?? this.subtopics,
-      );
+    id: id,
+    title: title,
+    focus: focus,
+    weight: weight,
+    order: order,
+    subtopics: subtopics ?? this.subtopics,
+  );
 
   factory StudyArea.fromFirestore(String id, Map<String, dynamic> map) {
     final raw = map['subtopics'] as List<dynamic>? ?? const [];
@@ -167,16 +147,18 @@ class StudyArea {
       ),
       order: map['order'] as int? ?? 0,
       subtopics: raw
-          .map((e) => StudySubtopic.fromMap(Map<String, dynamic>.from(e as Map)))
+          .map(
+            (e) => StudySubtopic.fromMap(Map<String, dynamic>.from(e as Map)),
+          )
           .toList(),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'focus': focus,
-        'weight': weight.name,
-        'order': order,
-        'subtopics': subtopics.map((s) => s.toMap()).toList(),
-      };
+    'title': title,
+    'focus': focus,
+    'weight': weight.name,
+    'order': order,
+    'subtopics': subtopics.map((s) => s.toMap()).toList(),
+  };
 }

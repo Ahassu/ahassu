@@ -145,6 +145,9 @@ class _SubtopicTile extends ConsumerWidget {
   }
 }
 
+/// A question and its answer, told apart by colour alone — no labels, by
+/// request. The semantics labels are for screen readers, which cannot see the
+/// colour difference the design leans on.
 class _CardBlock extends StatelessWidget {
   final StudyCard card;
 
@@ -155,43 +158,24 @@ class _CardBlock extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: kQuestionBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: RichText(
-            text: TextSpan(
-              style: const TextStyle(fontSize: 15.5, height: 1.4, fontWeight: FontWeight.w700, color: kQuestionInk),
-              children: [
-                const TextSpan(text: 'Q: '),
-                TextSpan(text: card.question),
-              ],
-            ),
+        Semantics(
+          label: 'Question',
+          child: _Block(
+            background: kQuestionBg,
+            ink: kQuestionInk,
+            text: card.question,
+            weight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 16),
-        const _BlockLabel('Answer'),
-        const SizedBox(height: 8),
-        _PointsTable(points: card.points),
-        const SizedBox(height: 18),
-        _TintedBlock(
-          background: kBestBg,
-          label: 'Best Answer to Give:',
-          labelColor: kBestInk,
-          body: card.bestAnswer,
-          italic: true,
-        ),
-        const SizedBox(height: 12),
-        _TintedBlock(
-          background: kHintBg,
-          label: 'Hint to Remember:',
-          labelColor: kHintInk,
-          body: card.hint,
-          italic: true,
-          inline: true,
+        const SizedBox(height: 10),
+        Semantics(
+          label: 'Answer',
+          child: _Block(
+            background: kBestBg,
+            ink: kBestInk,
+            text: card.answer,
+            selectable: true,
+          ),
         ),
         const SizedBox(height: 8),
       ],
@@ -199,126 +183,34 @@ class _CardBlock extends StatelessWidget {
   }
 }
 
-class _BlockLabel extends StatelessWidget {
-  final String text;
-
-  const _BlockLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(text,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87));
-  }
-}
-
-/// The breakdown, as a two-column table. Scrolls horizontally on narrow
-/// screens rather than squeezing the left column into one character per line.
-class _PointsTable extends StatelessWidget {
-  final List<(String, String)> points;
-
-  const _PointsTable({required this.points});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final narrow = width < 340;
-        final table = SizedBox(
-          width: narrow ? 340 : width,
-          child: Table(
-            border: TableBorder.all(color: Colors.black12, width: 1),
-            columnWidths: const {0: FlexColumnWidth(1), 1: FlexColumnWidth(2)},
-            children: [
-              for (var i = 0; i < points.length; i++)
-                TableRow(
-                  decoration: BoxDecoration(
-                    color: i.isEven ? Colors.white : const Color(0xFFF6F7FA),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                      child: Text(points[i].$1,
-                          style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, height: 1.35)),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                      child: Text(points[i].$2,
-                          style: const TextStyle(fontSize: 13.5, height: 1.35, color: Colors.black87)),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        );
-        return narrow
-            ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: table)
-            : table;
-      },
-    );
-  }
-}
-
-class _TintedBlock extends StatelessWidget {
+class _Block extends StatelessWidget {
   final Color background;
-  final String label;
-  final Color labelColor;
-  final String body;
-  final bool italic;
+  final Color ink;
+  final String text;
+  final FontWeight weight;
 
-  /// Runs the label and body together on one flowing paragraph, the way the
-  /// hint line reads, instead of stacking them.
-  final bool inline;
+  /// The answer is selectable so it can be copied out to rehearse from.
+  final bool selectable;
 
-  const _TintedBlock({
+  const _Block({
     required this.background,
-    required this.label,
-    required this.labelColor,
-    required this.body,
-    this.italic = false,
-    this.inline = false,
+    required this.ink,
+    required this.text,
+    this.weight = FontWeight.w400,
+    this.selectable = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bodyStyle = TextStyle(
-      fontSize: 14.5,
-      height: 1.5,
-      color: labelColor,
-      fontStyle: italic ? FontStyle.italic : FontStyle.normal,
-    );
-    final labelStyle = TextStyle(
-      fontSize: 14.5,
-      height: 1.5,
-      fontWeight: FontWeight.w700,
-      color: labelColor,
-    );
-
+    final style = TextStyle(fontSize: 15, height: 1.5, color: ink, fontWeight: weight);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: inline
-          ? RichText(
-              text: TextSpan(
-                style: labelStyle,
-                children: [
-                  TextSpan(text: '$label '),
-                  TextSpan(text: body, style: bodyStyle),
-                ],
-              ),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: labelStyle),
-                const SizedBox(height: 6),
-                SelectableText(body, style: bodyStyle),
-              ],
-            ),
+      child: selectable ? SelectableText(text, style: style) : Text(text, style: style),
     );
   }
 }

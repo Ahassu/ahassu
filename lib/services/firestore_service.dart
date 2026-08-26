@@ -8,10 +8,12 @@ import '../models/study_area.dart';
 /// device that already seeded.
 ///
 /// Version 1 was the Azure MLOps curriculum, version 2 the Azure Platform
-/// Engineer certification track. Version 3 replaces both with the interview
+/// Engineer certification track. Version 3 replaced both with the interview
 /// study plan for one specific posting — the certification learning paths,
 /// roadmaps and quizzes are gone, and their collections are retired below.
-const _seedVersion = 3;
+/// Version 4 cut each card down to a question and an answer, dropping the
+/// breakdown table and the hint line.
+const _seedVersion = 4;
 
 /// Collections the certification tracker used. They are deleted once, on the
 /// upgrade to version 3, so the old curriculum does not linger in Firestore

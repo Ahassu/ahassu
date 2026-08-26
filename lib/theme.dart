@@ -6,16 +6,13 @@ const kBackground = Color(0xFFF7F7FB);
 const kGreen = Color(0xFF34A853);
 const kBlue = Color(0xFF3B82F6);
 
-/// Card block colours, matching the question / answer / hint structure the
-/// study cards use. Kept as three tinted grounds rather than three accents so
-/// a screen full of them still reads as one page.
+/// Card block colours. Blue is the question, green is the answer — the cards
+/// carry no labels, so these two grounds are what tells them apart. Kept as
+/// tints rather than accents so a screen full of them still reads as one page.
 const kQuestionBg = Color(0xFFDCE6F2);
 const kQuestionInk = Color(0xFF1E4F91);
-const kTableHead = Color(0xFF2C4A70);
 const kBestBg = Color(0xFFDFEDDC);
 const kBestInk = Color(0xFF356B2E);
-const kHintBg = Color(0xFFF8E7DA);
-const kHintInk = Color(0xFF8A4A16);
 
 /// Weight badges — how hard the posting leans on an area.
 const kCritical = Color(0xFFB3261E);

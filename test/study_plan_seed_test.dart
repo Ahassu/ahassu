@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// The plan is hand-written content, so these guard the things that are easy
 /// to get wrong by hand and invisible until the app is open: a duplicated id
-/// silently collapses two subtopics' progress into one, and an empty answer
-/// renders as a blank card.
+/// silently collapses two subtopics' progress into one, and an empty question
+/// or answer renders as a blank coloured block.
 void main() {
   final plan = buildStudyPlan();
 
@@ -35,9 +35,7 @@ void main() {
         expect(sub.cards, isNotEmpty, reason: '${sub.id} has no cards');
         for (final card in sub.cards) {
           expect(card.question, isNotEmpty, reason: '${sub.id} question');
-          expect(card.points, isNotEmpty, reason: '${sub.id} points');
-          expect(card.bestAnswer, isNotEmpty, reason: '${sub.id} best answer');
-          expect(card.hint, isNotEmpty, reason: '${sub.id} hint');
+          expect(card.answer, isNotEmpty, reason: '${sub.id} answer');
         }
       }
     }
